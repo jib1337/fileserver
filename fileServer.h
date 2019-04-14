@@ -14,6 +14,7 @@ typedef struct {
 	char motd[MAXMOTDLEN];
 	char logFile[256];
 	char serverCreds[128];
+	int logFd;
 } config_t;
 
 // Filelist structure definition

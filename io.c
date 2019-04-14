@@ -4,7 +4,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
 #include "fileServer.h"
 #include "files.h"
@@ -14,20 +13,35 @@
 #include "security.h"
 
 void controlLogin(config_t* Config, int configStatus) {
-	printf("----------------------------\n Server control panel login \n----------------------------\n");
+	/* Login screen for access to server control
+	 * Also allows for registering of a server username and password.
+	 *
+	 * Note that if something interrupts the program between the config file being created
+	 * and new credentials being set, the server will use hardcoded defaults of admin:password */
+
+	char username[11];
+	char password[31];
+
+	printf("----------------------------------------\n"
+	       "       Server control panel login       \n"
+	       "----------------------------------------\n");
 
 	if (configStatus == 1) {
-		printf("No saved credentials detected: Please register some now!\n");
+		printf("No saved credentials: Please register some now!\n");
 		setCredentials(Config);
 		printf("\nNow test your created credentials by logging in below.\n\n");
 	}
 
-	if (authenticate(Config->serverCreds) == 1) {
+	printf("Username: ");
+	getMenuInput(username, 11);
+	printf("Password: ");
+	getMenuInput(password, 31);
+
+	if (authenticate(Config->serverCreds, username, password) == 1) {
 		printf("Access granted.\n\n");
 	} else {
 		printf("Access denied.\n");
-		sleep(1);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 }
 
@@ -45,7 +59,7 @@ void printWelcome(char* motd) {
 void showMainMenuOptions() {
 	// Prints the options for the main menu
 
-	printf("\n[1] Start server\n[2] Set server password\n[3] List hosted files\n[4] Quit\n");
+	printf("\n[1] Start server\n[2] Set server password\n[3] List hosted files\n[4] Shutdown Server / Exit\n");
 	printf("\nSelection: ");
 }
 

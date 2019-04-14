@@ -17,5 +17,5 @@ int startLogger(char* logFilename);
 void logPipe(char* message, int log);
 // Pipe the message through to the logging process
 
-void logServerStart(int configStatus, int log);
+void logProgramStart(int configStatus, int log);
 // Creates the opening log entry for the server. Depends on what occured with the config file

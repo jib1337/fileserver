@@ -57,7 +57,7 @@ void logger(char* logFilename, int log) {
 		fprintf(logFile, "%s\t%s\n", timestr, message);
 		fclose(logFile);
 
-		if (strcmp(message, "File server shut down") == 0) break;
+		if (strcmp(message, "Program shut down") == 0) break;
 	}
 
 	exit(0);
@@ -71,12 +71,12 @@ int startLogger(char* logFilename) {
 
 	if (pipe(logPipe) < 0) {
 
-		perror("Error: Could not create logfile pipe");
+		perror("Could not create logfile pipe");
 	}
 
 	if ((pid = fork()) < 0) {
 
-		perror("Error: Could not create logfile process");
+		perror("Could not create logfile process");
 
 	} else if (pid > 0) {
 
@@ -99,14 +99,14 @@ void logPipe(char* message, int log) {
 	write(log, message, strlen(message)+1);
 }
 
-void logServerStart(int configStatus, int log) {
+void logProgramStart(int configStatus, int log) {
 	// Creates the opening log entry for the server. Depends on what occured with the config file.
 
 	if (configStatus == 1) {
 
-		logPipe("Server up - config file created", log);
+		logPipe("Program started - config file created", log);
 	} else {
 
-		logPipe("Server up - config file loaded", log);
+		logPipe("Program started - config file loaded", log);
 	}
 }
