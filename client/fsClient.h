@@ -8,13 +8,10 @@
 // Config structure definition
 // Stores application settings
 typedef struct {
-	short portNumber;
-	char ipAddress[16];
+	char username[11];
+	short serverPort;
+	char serverIP[16];
 	char shareFolder[256];
-	char motd[MAXMOTDLEN];
-	char logFile[256];
-	char serverCreds[128];
-	int logFd;
 } config_t;
 
 // Filelist structure definition

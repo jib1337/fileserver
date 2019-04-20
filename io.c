@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
 #include "fileServer.h"
 #include "files.h"
 #include "logger.h"
@@ -33,9 +35,9 @@ void controlLogin(config_t* Config, int configStatus) {
 	}
 
 	printf("Username: ");
-	getMenuInput(username, 11);
+	getKeyboardInput(username, 11);
 	printf("Password: ");
-	getMenuInput(password, 31);
+	getKeyboardInput(password, 31);
 
 	if (authenticate(Config->serverCreds, username, password) == 1) {
 		printf("Access granted.\n\n");
@@ -43,6 +45,40 @@ void controlLogin(config_t* Config, int configStatus) {
 		printf("Access denied.\n");
 		exit(EXIT_FAILURE);
 	}
+}
+
+int clientLogin(threadData_t* serverInfo) {
+
+	//char buffer[256];
+	char username[11];
+	char password[31];
+
+	bzero(username, 11);
+	bzero(password, 31);
+
+	//printf("\n");
+	//bzero(buffer, 256);
+
+	//write(serverInfo->clientSocket, "Username: ", 11);
+	//read(serverInfo->clientSocket, buffer, sizeof(buffer));
+	//strncpy(username, buffer, 10);
+	getSocketInput(username, 11, serverInfo->clientSocket);
+
+	//bzero(buffer, 256);
+
+	write(serverInfo->clientSocket, "Password: ", 11);
+	//read(serverInfo->clientSocket, buffer, sizeof(buffer));
+	//strncpy(password, buffer, 30);
+	getSocketInput(password, 31, serverInfo->clientSocket);
+
+	//REMOVE THESE WHEN CLIENT SIDE IS DONE!
+	// Not sure why the hell its making me chomp at two?
+	//username[strlen(username)-2] = '\0';
+	//password[strlen(password)-2] = '\0';
+	//printf("%s, %ld", username, strlen(username));
+	//printf("%s, %ld", password, strlen(password));
+
+	return(authenticate(serverInfo->Config->serverCreds, username, password));
 }
 
 void printWelcome(char* motd) {
@@ -63,7 +99,7 @@ void showMainMenuOptions() {
 	printf("\nSelection: ");
 }
 
-void getMenuInput(char* inputString, int inputLength) {
+void getKeyboardInput(char* inputString, int inputLength) {
 	// Gets and stores user keyboard input in a given string
 
 	char ch;
@@ -75,6 +111,19 @@ void getMenuInput(char* inputString, int inputLength) {
 	} else {
 		while ((ch = getchar() != '\n') && (ch != EOF));
 	}
+}
+
+void getSocketInput(char* inputString, int inputLength, int sockFd) {
+	// Gets and stores input from a socket file descriptor
+
+	read(sockFd, inputString, inputLength);
+	
+	//if (inputLength > 2) {
+		// If the input length is over two, we want to chomp out a newline.
+
+	//	inputString[strlen(inputString)-2] = '\0';
+	//}
+	
 }
 
 int listFiles(fileList_t* FileList, char* shareFolder) {
@@ -157,7 +206,7 @@ void readFileMenu(fileList_t* FileList, config_t* Config, int log) {
 		do {
 
 			printf("\n[ q = quit to main menu | r = relist files ]\n\nSelect number of the file you wish to view (or option from above)\nSelection: ");
-			getMenuInput(fileNumberString, FILENUMBERSTRINGLEN);
+			getKeyboardInput(fileNumberString, FILENUMBERSTRINGLEN);
 			fileNum = atoi(fileNumberString);
 
 			if (strcmp(fileNumberString, "q") == 0) { // User wants to quit

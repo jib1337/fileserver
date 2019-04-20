@@ -74,10 +74,10 @@ void setCredentials(config_t* Config) {
 	char credString[128];
 
 	printf("New username: ");
-	getMenuInput(username, 11);
+	getKeyboardInput(username, 11);
 
 	printf("New password: ");
-	getMenuInput(password, 31);
+	getKeyboardInput(password, 31);
 		
 	strcpy(credString, username);
 	strcat(credString, ":");
