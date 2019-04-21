@@ -28,7 +28,7 @@ io.o: io.h logger.h files.h settings.h fileServer.h io.c
 security.o: security.h settings.h io.h logger.h networking.h fileServer.h security.c
 	$(CC) $(CFLAGS) -c security.c
 
-networking.o: networking.h logger.h io.h security.h networking.c
+networking.o: networking.h logger.h io.h security.h files.h networking.c
 	$(CC) $(CFLAGS) -c networking.c
 
 clean:

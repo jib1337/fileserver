@@ -16,8 +16,9 @@
 #include "io.h"
 #include "logger.h"
 #include "security.h"
+#include "files.h"
 
-void serverStart(config_t* Config, int* serverStarted) {
+void serverStart(config_t* Config, short* serverStarted) {
 
 	pid_t pid;
 
@@ -46,6 +47,8 @@ void serverStart(config_t* Config, int* serverStarted) {
 				// This bit goes in a loop with threading stuff
 				listen(listenSocket, 128);
 
+				*serverStarted = Config->portNumber;
+
 				int clientSocket;
 				unsigned int clientSize = sizeof(struct sockaddr_in);
 				
@@ -60,6 +63,7 @@ void serverStart(config_t* Config, int* serverStarted) {
 				}
 				
 				close(listenSocket);
+				*serverStarted = 0;
 			}
 		}
 
@@ -68,7 +72,6 @@ void serverStart(config_t* Config, int* serverStarted) {
 	} else {
 
 		// Parent / Control process
-		*serverStarted = 1;
 	}
 }
 
@@ -89,7 +92,7 @@ void connectionHandler(threadData_t* serverInfo) {
 
 			switch (menuChoice) {
 				case (1):
-					printf("List Files\n");
+					listFiles(serverInfo);
 					break;
 				case (2):
 					printf("Upload\n");

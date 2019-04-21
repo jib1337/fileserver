@@ -19,7 +19,7 @@ int main() {
 	char menuChoiceString[2];
 	int menuChoice = 0;
 	int configStatus = 0;
-	int serverStarted = 0;
+	short serverStarted = 0;
 
 	// Check/create config and log files
 	config_t Config = configCheck(&configStatus);
@@ -31,14 +31,11 @@ int main() {
 	Config.logFd = startLogger(Config.logFile);
 	logProgramStart(configStatus, Config.logFd);
 
-	// Create a file list structure for storing filenames
-	fileList_t FileList = {NULL, 0};
-
 	printWelcome(Config.motd);
 
 	while (menuChoice != 4) {
 
-		showMainMenuOptions();
+		showMainMenuOptions(serverStarted);
 		getKeyboardInput(menuChoiceString, 2);
 		menuChoice = atoi(menuChoiceString);
 
@@ -59,7 +56,7 @@ int main() {
 
 			case(3):
 				// List files in shared directory
-				listFiles(&FileList, Config.shareFolder);
+				//listFiles(&FileList, Config.shareFolder);
 				logPipe("Shared directory listed", Config.logFd);
 				break;
 
@@ -71,9 +68,6 @@ int main() {
 				printf("\nError: Invalid menu choice.\n");
 		}
 	}
-
-	// Free up allocated memory before we exit
-	fileCleanup(&FileList);
 
 	logPipe("Program shut down", Config.logFd);
 	wait(NULL);

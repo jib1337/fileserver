@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/socket.h>
 
 #include "fsClient.h"
 #include "files.h"
@@ -59,28 +60,66 @@ void getSocketInput(char* inputString, int inputLength, int sockFd) {
 	
 }
 
-int listFiles(fileList_t* FileList, char* shareFolder) {
-	// Outputs a list of current files in the shared directory.
-	
-	// To ensure we have the most up to date list, we'll call getFiles here to refresh the list.
-	getFiles(FileList, shareFolder);
+void freeFileList(fileList_t* FileList) {
 
-	int i;
+	if (FileList->fileCount > 0) {
 
-	if (FileList->fileCount == 0) {
-		// Print an error message if folder is empty or non existant
-		fprintf(stderr, "Error: No files to list\n");
+		int i;
 
-		return 1; // Indicates failure to read filelist
-
-	} else {
-
-		printf("\n");
-		for(i=0;i<(FileList->fileCount); i++) {
-		
-			printf("%d.\t%s\n", i+1, FileList->sharedFiles[i]);
+		for (i=0; i<FileList->fileCount; i++) {
+			free(FileList->sharedFiles[i]);
 		}
 
-		return 0; // Successful reading of filelist
+		free(FileList->sharedFiles);
+
+		FileList->sharedFiles = NULL;
+		FileList->fileCount = 0;
 	}
+}
+
+int getFileList(fileList_t* FileList, int connectionSocket) {
+	// Outputs a list of current files in the shared directory.
+	
+	int i = 0, j = 0, k;
+	int fileNum = 1;
+	char buffer[1024];
+	char c[1];
+
+	freeFileList(FileList);	       
+
+	FileList->sharedFiles = malloc(sizeof(char*) * 20);
+
+	while ((read(connectionSocket, c, 1)) > 0) {
+
+		if (c[0] != '\n') {
+
+			buffer[i] = c[0];
+			i++;
+			
+			if (c[0] == '/') {
+				break;
+			}
+
+		} else {
+
+			buffer[i] = '\0';
+
+			FileList->sharedFiles[j] = (char*)calloc(1, strlen(buffer)+1);
+			strncpy(FileList->sharedFiles[j], buffer, strlen(buffer)+1);
+			FileList->fileCount++;
+			i=0;
+			fileNum++;
+			j++;
+		}
+	}
+
+	
+	printf("\nTotal files: %d\n", FileList->fileCount);
+	for(k=0; k<FileList->fileCount; k++) {
+		printf("%d. %s\n", k+1, FileList->sharedFiles[k]);
+	}
+
+	return 0;
+
+		
 }

@@ -5,7 +5,7 @@
 void fileCleanup(fileList_t* FileList);
 // Frees up all memory utilized by the current file list data
 
-void getFiles(fileList_t* FileList, char* shareFolder);
+void listFiles(threadData_t* serverInfo);
 // Retrieves names of files from the shared folder and stores them in a FileList struct
 
 int checkAccess(char* fileName);

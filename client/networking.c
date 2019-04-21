@@ -13,6 +13,7 @@
 
 #include "fsClient.h"
 #include "networking.h"
+#include "files.h"
 #include "io.h"
 
 void serverConnect(config_t* Config) {
@@ -53,6 +54,8 @@ void serverConnect(config_t* Config) {
 
 			if (strcmp(buffer, "Access Denied.") != 0) {
 				
+				fileList_t FileList = {NULL, 0};
+
 				char menuChoiceString[2];
 				int menuChoice = 0;
 
@@ -64,8 +67,8 @@ void serverConnect(config_t* Config) {
 
 					switch (menuChoice) {
 						case (1):
-							printf("List Files\n");
 							write(connectionSocket, "1", 2);
+							getFileList(&FileList, connectionSocket);
 							break;
 
 						case (2):

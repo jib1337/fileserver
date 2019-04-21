@@ -7,7 +7,7 @@
 #define DEF_SHAREFOLDER "./fileshare"
 #define DEF_MOTD "Welcome to the file server!"
 #define DEF_LOGFILE "./activity.log"
-#define DEF_CREDS "admin:5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8"
+#define DEF_CREDS "user:5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8"
 
 void configRead(char* input, int msgLen, FILE* file);
 // Reads a line from the config file. If a line cannot be read, the program will exit

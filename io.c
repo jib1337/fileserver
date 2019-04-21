@@ -92,10 +92,16 @@ void printWelcome(char* motd) {
 	       "----------------------------------------\n", motd);
 }
 
-void showMainMenuOptions() {
+void showMainMenuOptions(short portNumber) {
 	// Prints the options for the main menu
 
-	printf("\n[1] Start server\n[2] Set server password\n[3] List hosted files\n[4] Shutdown Server / Exit\n");
+	if (portNumber == 0) {
+		printf("\n[1] Start server\n");
+	} else {
+		printf("Server listening on port %hi...\n", portNumber);
+	}
+
+	printf("[2] Set server password\n[3] List hosted files\n[4] Shutdown Server / Exit\n");
 	printf("\nSelection: ");
 }
 
@@ -124,32 +130,6 @@ void getSocketInput(char* inputString, int inputLength, int sockFd) {
 	//	inputString[strlen(inputString)-2] = '\0';
 	//}
 	
-}
-
-int listFiles(fileList_t* FileList, char* shareFolder) {
-	// Outputs a list of current files in the shared directory.
-	
-	// To ensure we have the most up to date list, we'll call getFiles here to refresh the list.
-	getFiles(FileList, shareFolder);
-
-	int i;
-
-	if (FileList->fileCount == 0) {
-		// Print an error message if folder is empty or non existant
-		fprintf(stderr, "Error: No files to list\n");
-
-		return 1; // Indicates failure to read filelist
-
-	} else {
-
-		printf("\n");
-		for(i=0;i<(FileList->fileCount); i++) {
-		
-			printf("%d.\t%s\n", i+1, FileList->sharedFiles[i]);
-		}
-
-		return 0; // Successful reading of filelist
-	}
 }
 
 void printFileContent (int* fileNum, char* fileName, config_t* Config, int log) {
@@ -192,44 +172,3 @@ void printFileContent (int* fileNum, char* fileName, config_t* Config, int log) 
 	free(filePath);
 }
 
-void readFileMenu(fileList_t* FileList, config_t* Config, int log) {
-	// Displays a menu for the user to choose which file to output.
-
-	int fileNum = 1;
-	char fileNumberString[FILENUMBERSTRINGLEN]; 
-
-	// List the current files
-	if (listFiles(FileList, Config->shareFolder) == 0) {
-
-		logPipe("Shared directory listed from read file menu", log);
-
-		do {
-
-			printf("\n[ q = quit to main menu | r = relist files ]\n\nSelect number of the file you wish to view (or option from above)\nSelection: ");
-			getKeyboardInput(fileNumberString, FILENUMBERSTRINGLEN);
-			fileNum = atoi(fileNumberString);
-
-			if (strcmp(fileNumberString, "q") == 0) { // User wants to quit
-
-			} else if (strcmp(fileNumberString, "r") == 0) {
-
-				if (listFiles(FileList, Config->shareFolder) == 0) {
-					logPipe("Shared directory relisted from read file menu", log);
-				}
-				continue;
-
-			} else if ((fileNum <= 0) || (fileNum > FileList->fileCount)) {
-
-				printf("Error: Invalid selection.\n\n");
-				continue;
-
-			} else {
-				// Given input is valid, so print the file's contents
-				printFileContent(&fileNum, FileList->sharedFiles[fileNum-1], Config, log);
-			}
-
-		} while (strcmp(fileNumberString, "q") != 0);
-
-
-	}
-}

@@ -13,7 +13,7 @@ int clientLogin(threadData_t* serverInfo);
 void printWelcome(char* motd);
 // Prints the main menu along with the MOTD
 
-void showMainMenuOptions();
+void showMainMenuOptions(short portNumber);
 // Prints the options for the main menu
 
 void getKeyboardInput(char* inputString, int inputLength);
@@ -21,7 +21,7 @@ void getKeyboardInput(char* inputString, int inputLength);
 
 void getSocketInput(char* inputString, int inputLength, int sockFd);
 
-int listFiles(fileList_t* FileList, char* shareFolder);
+//int listFiles(fileList_t* FileList, char* shareFolder);
 // Outputs a list of current files in the shared directory
 
 void printFileContent (int* fileNum, char* fileName, config_t* Config, int log);

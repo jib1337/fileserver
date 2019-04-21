@@ -10,39 +10,16 @@
 #include "fileServer.h"
 #include "files.h"
 
-void fileCleanup(fileList_t* FileList) {
-	// Frees up all memory utilized by the current file list.
-	
-	int i;
+void listFiles(threadData_t* serverInfo) {
 
-	if (FileList->sharedFiles != NULL) {
-		// We won't bother doing this if we havent allocated any memory yet.
-
-		for (i=0;i<FileList->fileCount;i++) {
-
-			free(FileList->sharedFiles[i]);
-		}
-
-		free(FileList->sharedFiles);
-		FileList->sharedFiles = NULL;
-		FileList->fileCount = 0;
-	}
-}
-
-void getFiles(fileList_t* FileList, char* shareFolder) {
-	/* Retrieves names of files from the shared folder and stores them in
-	 * a FileList struct.
-	 * If we already have information in the list, we'll free up that memory before retrieving again.
-	 * This function can be used anywhere to refresh the file list */
-
-	fileCleanup(FileList);
-
-	int i = 0;
 	DIR *d;
 	struct dirent* dir;
-	d = opendir(shareFolder);
+	d = opendir(serverInfo->Config->shareFolder);
+	char buffer[1024];
 	
 	if (d) {
+
+		/* No need to do this.
 
 		while ((dir = readdir(d)) != NULL) {
 			if (dir->d_name[0] == '.') continue;
@@ -52,6 +29,7 @@ void getFiles(fileList_t* FileList, char* shareFolder) {
 		rewinddir(d);
 
 		FileList->sharedFiles = malloc(sizeof(char*) * FileList->fileCount);
+		*/
 
 		while ((dir = readdir(d)) != NULL) {
 
@@ -59,12 +37,24 @@ void getFiles(fileList_t* FileList, char* shareFolder) {
 			// are skipped, and also allows for hidden files to be placed in the directory that won't be shared.
 			if (dir->d_name[0] == '.') continue;
 
-			FileList->sharedFiles[i] = (char*)calloc(1, strlen(dir->d_name)+1);
-			strncpy(FileList->sharedFiles[i], dir->d_name, strlen(dir->d_name));
-			i++;
+			strncpy(buffer, dir->d_name, strlen(dir->d_name));
+
+			buffer[strlen(dir->d_name)] = '\n';
+			buffer[strlen(dir->d_name)+1] = '\0';
+
+			write(serverInfo->clientSocket, buffer, strlen(buffer));
+			
+			//printf("%s", buffer);
+
+			//FileList->sharedFiles[i] = (char*)calloc(1, strlen(dir->d_name)+1);
+			//strncpy(FileList->sharedFiles[i], dir->d_name, strlen(dir->d_name));
+			//i++;
 		}
 
 		closedir(d);
+
+		write(serverInfo->clientSocket, "/", 1);
+		fflush(stdout);
 
 	} else {
 

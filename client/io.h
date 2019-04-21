@@ -19,7 +19,7 @@ void getKeyboardInput(char* inputString, int inputLength);
 
 void getSocketInput(char* inputString, int inputLength, int sockFd);
 
-int listFiles(fileList_t* FileList, char* shareFolder);
+int getFileList(fileList_t* FileList, int connectionSocket);
 // Outputs a list of current files in the shared directory
 
 void printFileContent (int* fileNum, char* fileName, config_t* Config, int log);
