@@ -27,5 +27,5 @@ typedef struct {
 typedef struct {
 	int clientSocket;
 	config_t* Config;
+	char clientAddress[30];
 } threadData_t;
-

@@ -7,11 +7,11 @@
 #include <sys/wait.h>
 
 #include "fileServer.h"
+#include "networking.h"
 #include "files.h"
 #include "logger.h"
 #include "io.h"
 #include "settings.h"
-#include "networking.h"
 #include "security.h"
 
 int main() {
@@ -19,13 +19,13 @@ int main() {
 	char menuChoiceString[2];
 	int menuChoice = 0;
 	int configStatus = 0;
-	short serverStarted = 0;
+	int serverStarted = 0;
 
 	// Check/create config and log files
 	config_t Config = configCheck(&configStatus);
 
 	// Enter credentials to access server control
-	//controlLogin(&Config, configStatus);
+	// controlLogin(&Config, configStatus);
 
 	// Start up the logger
 	Config.logFd = startLogger(Config.logFile);
@@ -33,7 +33,7 @@ int main() {
 
 	printWelcome(Config.motd);
 
-	while (menuChoice != 4) {
+	while (menuChoice != 3) {
 
 		showMainMenuOptions(serverStarted);
 		getKeyboardInput(menuChoiceString, 2);
@@ -55,12 +55,6 @@ int main() {
 				break;
 
 			case(3):
-				// List files in shared directory
-				//listFiles(&FileList, Config.shareFolder);
-				logPipe("Shared directory listed", Config.logFd);
-				break;
-
-			case(4):
 				// Quit
 				break;
 

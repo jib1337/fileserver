@@ -2,7 +2,7 @@
  * settings.h
  * settings.c header file */
 
-#define DEF_USERNAME "admin"
+#define DEF_USERNAME "user"
 #define DEF_PORTNUM 6666
 #define DEF_IPADDRESS "127.0.0.1"
 #define DEF_SHAREFOLDER "./fileshare"

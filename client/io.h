@@ -25,6 +25,9 @@ int getFileList(fileList_t* FileList, int connectionSocket);
 void printFileContent (int* fileNum, char* fileName, config_t* Config, int log);
 // Read a hosted file and display it's contents on screen
 
-void readFileMenu(fileList_t* FileList, config_t* Config, int log);
-// Displays a menu for the user to choose which file to output
+void downloadFileMenu(fileList_t* FileList, char* shareFolder, int connectionSocket);
+// Displays a menu for the user to choose which file to download
+
+int downloadFile(char* fileName, char* filePath, int connectionSocket);
+// Request and recieve a file from the server
 

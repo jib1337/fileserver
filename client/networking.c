@@ -77,8 +77,8 @@ void serverConnect(config_t* Config) {
 							break;
 
 						case (3):
-							printf("Download\n");
 							write(connectionSocket, "3", 2);
+							downloadFileMenu(&FileList, Config->shareFolder, connectionSocket);
 							break;
 						
 						case (4):

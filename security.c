@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #include "fileServer.h"
 #include "settings.h"
@@ -73,8 +74,10 @@ void setCredentials(config_t* Config) {
 	char passwordHash[65];
 	char credString[128];
 
-	printf("New username: ");
-	getKeyboardInput(username, 11);
+	do {
+		printf("New username: ");
+		getKeyboardInput(username, 11);
+	} while (validateName(username) == 0);
 
 	printf("New password: ");
 	getKeyboardInput(password, 31);
@@ -88,4 +91,25 @@ void setCredentials(config_t* Config) {
 
 	//printf("Credentials updated.\nNew username: %s\nNew password: %s\n", username, password);
 }
+
+int validateName(char* username) {
+	// validates a username to ensure only alphabetic characters are entered
+
+	int i;
+
+	if (strlen(username) == 0) {
+		fprintf(stderr, "\nError: Username must be at least 1 character long.\n");
+		return 0;
+	}
+
+	for (i=0; i<strlen(username); i++) {
+		if (isalpha(username[i]) == 0) {
+			fprintf(stderr, "\nError: Username can only consist of alphabet characters.\nPlease try again.\n");
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
 

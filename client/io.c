@@ -123,3 +123,91 @@ int getFileList(fileList_t* FileList, int connectionSocket) {
 
 		
 }
+
+void downloadFileMenu(fileList_t* FileList, char* shareFolder, int connectionSocket) {
+	
+	char fileNumberString[FILENUMBERSTRINGLEN];
+	int fileNumber;
+
+	printf("\nDownload file menu\n");
+	// Refresh the file list
+	getFileList(FileList, connectionSocket);
+
+	do {
+		
+		printf("\n[ q = quit to main menu | r = relist files ]\n\nSelect number of the file you wish to download (or option from above)\nSelection: ");
+		getKeyboardInput(fileNumberString, FILENUMBERSTRINGLEN);
+		fileNumber = atoi(fileNumberString);
+
+		if (strcmp(fileNumberString, "q") == 0) { // User wants to quit
+
+		} else if (strcmp(fileNumberString, "r") == 0) {
+			// User wants to relist files
+			
+			write(connectionSocket, "r", 2);
+			if (getFileList(FileList, connectionSocket) == 0) {
+				printf("Files relisted.\n");
+			}
+			continue;
+		} else if ((fileNumber <= 0) || (fileNumber > FileList->fileCount)) {
+
+			printf("Error: Invalid selection.\n\n");
+			continue;
+		} else {
+			
+			write(connectionSocket, "d", 2);
+
+			char* filePath = (char*)calloc(1, strlen(shareFolder) + strlen(FileList->sharedFiles[fileNumber-1] + 1));
+			strncpy(filePath, shareFolder, strlen(shareFolder));
+			strcat(filePath, "/");
+			strncat(filePath, FileList->sharedFiles[fileNumber-1], strlen(FileList->sharedFiles[fileNumber-1]));
+			printf("FILE: %s\n", filePath);
+			if (downloadFile(FileList->sharedFiles[fileNumber-1], filePath, connectionSocket) == 0) {
+				printf("%s successfully downloaded.\n\n", FileList->sharedFiles[fileNumber-1]);
+			} else {
+				printf("%s failed to download.\n\n", FileList->sharedFiles[fileNumber-1]);
+			}
+
+			free(filePath);
+		}
+	} while (strcmp(fileNumberString, "q") != 0);
+
+	write(connectionSocket, "q", 2);
+}
+
+int downloadFile(char* fileName, char* filePath, int connectionSocket) {
+
+	FILE* fileData;
+	char response[14];
+	// In theory this allows file sizes of multiple terabyes
+
+	write(connectionSocket, fileName, strlen(fileName)+1);
+	read(connectionSocket, response, 14);
+	
+	if (strcmp(response, "error") == 0) {
+		fprintf(stderr, "Error: File was unable to be downloaded\n");
+	} else {
+		printf("Downloading %s of size %s bytes now...\n", fileName, response);
+
+		char buffer[BUFSIZ];
+		size_t recievedBytes;
+		int remainingData = atoi(response);
+		printf("File Size: %d\n", remainingData);
+
+		fileData = fopen(filePath, "w");
+
+		while ((remainingData > 0) && ((recievedBytes = recv(connectionSocket, buffer, BUFSIZ, 0)) > 0)) {
+
+			fwrite(buffer, sizeof(char), recievedBytes, fileData);
+			remainingData -= recievedBytes;
+			printf("Remaining: %d\n", remainingData);
+		}
+
+		fclose(fileData);
+
+	}
+
+	return 0;
+}
+
+

@@ -3,7 +3,7 @@
 # Builds the file server application binary
 
 CC = gcc
-CFLAGS = -Wall -lssl -lcrypto
+CFLAGS = -Wall -lssl -lcrypto #make linker flags?
 OBJ = fileServer.o logger.o files.o settings.o io.o security.o networking.o
 EXEC = fs
 

@@ -26,4 +26,4 @@ networking.o: networking.h io.h networking.c
 	$(CC) $(CFLAGS) -c networking.c
 
 clean:
-	rm -vf $(OBJ) *.log
+	rm -vf $(OBJ) *.log fileshare/*

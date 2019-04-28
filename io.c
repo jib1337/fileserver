@@ -6,6 +6,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/sendfile.h>
 
 #include "fileServer.h"
 #include "files.h"
@@ -92,16 +95,16 @@ void printWelcome(char* motd) {
 	       "----------------------------------------\n", motd);
 }
 
-void showMainMenuOptions(short portNumber) {
+void showMainMenuOptions(int serverStarted) {
 	// Prints the options for the main menu
 
-	if (portNumber == 0) {
+	if (serverStarted == 0) {
 		printf("\n[1] Start server\n");
 	} else {
-		printf("Server listening on port %hi...\n", portNumber);
+		printf("\n[1] Stop server\n");
 	}
 
-	printf("[2] Set server password\n[3] List hosted files\n[4] Shutdown Server / Exit\n");
+	printf("[2] Set server credentials\n[3] Shutdown Server / Exit\n");
 	printf("\nSelection: ");
 }
 
@@ -132,43 +135,81 @@ void getSocketInput(char* inputString, int inputLength, int sockFd) {
 	
 }
 
-void printFileContent (int* fileNum, char* fileName, config_t* Config, int log) {
+void sendFileMenu(threadData_t* ServerInfo) {
+	
+	char menuChoiceString[2];
+
+	// Send the fileList to the server
+	listFiles(ServerInfo);
+
+	do {
+
+		getSocketInput(menuChoiceString, 2, ServerInfo->clientSocket);
+
+		if (strcmp(menuChoiceString, "r") == 0) {
+			listFiles(ServerInfo);
+		} else if (strcmp(menuChoiceString, "d") == 0) {
+			sendFile(ServerInfo);
+		}
+	} while (strcmp(menuChoiceString, "q") != 0);
+
+}
+
+int sendFile(threadData_t* ServerInfo) {
 	// Read a hosted file and display it's contents on screen
 
 	// To make the file path, we allocate enough space for both the directory and filename.
-	char* filePath = malloc(strlen(Config->shareFolder) + strlen(fileName) + 2);
-	char c;
+	char fileName[255];
+	char fileSizeString[14];
+	char* filePath = calloc(1, strlen(ServerInfo->Config->shareFolder) + 257);
+
+	read(ServerInfo->clientSocket, fileName, 255);
 
 	// Create the file path
-	strcpy(filePath, Config->shareFolder);
+	strcpy(filePath, ServerInfo->Config->shareFolder);
 	strcat(filePath, "/");
 	strcat(filePath, fileName);
 
-	printf("\nContents of %s\n------------------------------------------------------------\n\n", filePath);
+	printf("Sending file: %s\n", filePath);
 
-	FILE* hostedFile;
+	int hostedFile;
 
-	if (((checkAccess(filePath)) >= 4) && ((hostedFile = fopen(filePath, "r")) != NULL)) {
+	if (((checkAccess(filePath)) >= 4) && ((hostedFile = open(filePath, O_RDONLY)) > 0)) {
 		// File exists with the correct permissions and opened with no errors
+		
+		struct stat fileStats;
+		fstat(hostedFile, &fileStats);
+	
+		int sentBytes = 0;
+		off_t offset = 0;
+		long dataRemaining = fileStats.st_size;
 
-		c = fgetc(hostedFile);
+		// Send the file size to the client - also lets them know the file is accessable and can be sent
+		sprintf(fileSizeString, "%ld", fileStats.st_size);
+		write(ServerInfo->clientSocket, fileSizeString, 14);
+		
+		printf("Data Remaining: %ld\n", dataRemaining);
 
-		while (c != EOF) {
+		while (((sentBytes = sendfile(ServerInfo->clientSocket, hostedFile, &offset, BUFSIZ)) > 0)
+					&& (dataRemaining > 0)) {
 
-			printf("%c", c);
-			c = fgetc(hostedFile);
+			dataRemaining -= sentBytes;
+			printf("Data Remaining: %ld\n", dataRemaining);
 		}
 
-		fclose(hostedFile);
-		logPipe("File contents outputted", log);
+		printf("Done.");
+			
 
 	} else {
+		// If the file fails to open, we cannot proceed, so let the client know so they can handle on their end.
 
-		perror("Error - Could not open file");
-		logPipe("Attempt to read file contents failed.", log);
+		write(ServerInfo->clientSocket,  "error", 6); 
 	}
 
-	printf("\n------------------------------------------------------------\n");
+	// Close the file and free up the file path.
+	close(hostedFile);
 	free(filePath);
+
+	return 0;
 }
 

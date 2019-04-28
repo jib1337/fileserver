@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <string.h>
+
 #include "fileServer.h"
 #include "files.h"
 
@@ -61,6 +62,14 @@ void listFiles(threadData_t* serverInfo) {
 		perror("Error: Directory unable to be scanned");
 	}
 }
+
+/*int fileSize(int fd) {
+	// Return the byte size of a file
+
+	lseek(file, 0, 2);
+	
+	return(tell(file));
+}*/
 
 int checkAccess(char* fileName) {
 	// Checks the read, write and execute persmissions of a file and returns a number that represents the current access.

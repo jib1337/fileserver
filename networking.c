@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <pthread.h>
 
 #include "fileServer.h"
@@ -18,7 +19,7 @@
 #include "security.h"
 #include "files.h"
 
-void serverStart(config_t* Config, short* serverStarted) {
+void serverStart(config_t* Config, int* serverStarted) {
 
 	pid_t pid;
 
@@ -33,7 +34,9 @@ void serverStart(config_t* Config, short* serverStarted) {
 		int listenSocket;
 
 		if ((listenSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_IP)) < 0) {
+
 				perror("Could not create socket");
+
 		} else {
 			
 			serverAddress.sin_family = AF_INET;
@@ -41,22 +44,30 @@ void serverStart(config_t* Config, short* serverStarted) {
 			serverAddress.sin_port = htons(Config->portNumber);
 
 			if (bind(listenSocket, (struct sockaddr*) &serverAddress, sizeof(struct sockaddr_in)) < 0) {
+				
 				perror("Could not bind port");
+
 			} else {
 
 				// This bit goes in a loop with threading stuff
 				listen(listenSocket, 128);
 
-				*serverStarted = Config->portNumber;
-
 				int clientSocket;
 				unsigned int clientSize = sizeof(struct sockaddr_in);
 				
 				if ((clientSocket = accept(listenSocket, (struct sockaddr*) &clientAddress, &clientSize)) < 0) {
-					perror("Could not accept new connection");
-				} else {
 					
+					perror("Could not accept new connection");
+
+				} else {
+				
+					// Build the theadData struct containing everything we need for client interaction	
 					threadData_t serverInfo = {clientSocket, Config};
+
+					// Maybe take the client address out later if we dont end up using it?
+					strcpy(serverInfo.clientAddress, inet_ntoa(clientAddress.sin_addr));
+
+					logPipe("Client connected\n", Config->logFd);
 
 					// Start a new thread and enter the thread function
 					connectionHandler(&serverInfo);
@@ -71,6 +82,7 @@ void serverStart(config_t* Config, short* serverStarted) {
 	
 	} else {
 
+		*serverStarted = 1;
 		// Parent / Control process
 	}
 }
@@ -98,7 +110,7 @@ void connectionHandler(threadData_t* serverInfo) {
 					printf("Upload\n");
 					break;
 				case (3):
-					printf("Download\n");
+					sendFileMenu(serverInfo);
 					break;
 				case (4):
 					printf("Quit\n");
