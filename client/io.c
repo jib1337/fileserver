@@ -6,7 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/sendfile.h>
 
 #include "fsClient.h"
 #include "files.h"
@@ -122,6 +125,144 @@ int getFileList(fileList_t* FileList, int connectionSocket) {
 	return 0;
 
 		
+}
+
+int listFiles(fileList_t* FileList, char* shareFolder) {
+	// Outputs a list of current files in the shared directory.
+	
+	// To ensure we have the most up to date list, we'll call getFiles here to refresh the list.
+	getFiles(FileList, shareFolder);
+
+	int i;
+
+	if (FileList->fileCount == 0) {
+		// Print an error message if folder is empty or non existant
+		fprintf(stderr, "Error: No files to list\n");
+
+		return 1; // Indicates failure to read filelist
+
+	} else {
+
+		printf("\n");
+		for(i=0;i<(FileList->fileCount); i++) {
+		
+			printf("%d.\t%s\n", i+1, FileList->sharedFiles[i]);
+		}
+
+		return 0; // Successful reading of filelist
+	}
+}
+
+void uploadFileMenu(fileList_t* FileList, char* shareFolder, int connectionSocket) {
+	
+	char fileNumberString[FILENUMBERSTRINGLEN];
+	int fileNumber;
+
+	printf("\nUpload file menu\n");
+
+	// Refresh the file list
+	listFiles(FileList, shareFolder);
+
+	do {
+		
+		printf("\n[ q = quit to main menu | r = relist files ]\n\nSelect number of the file you wish to upload (or option from above)\nSelection: ");
+		getKeyboardInput(fileNumberString, FILENUMBERSTRINGLEN);
+		fileNumber = atoi(fileNumberString);
+
+		if (strcmp(fileNumberString, "q") == 0) { // User wants to quit
+
+		} else if (strcmp(fileNumberString, "r") == 0) {
+			// User wants to relist files
+			
+			if (listFiles(FileList, shareFolder) == 0) {
+				printf("Files relisted.\n");
+			}
+			continue;
+		} else if ((fileNumber <= 0) || (fileNumber > FileList->fileCount)) {
+
+			printf("Error: Invalid selection.\n\n");
+			continue;
+		} else {
+			
+			printf("Getting file: %s\n", FileList->sharedFiles[fileNumber-1]);
+
+			write(connectionSocket, "u", 2);
+
+			char* filePath = malloc(strlen(shareFolder) + strlen(FileList->sharedFiles[fileNumber-1]) + 2);
+
+			// Create the file path
+			strcpy(filePath, shareFolder);
+			strcat(filePath, "/");
+			strcat(filePath, FileList->sharedFiles[fileNumber-1]);
+
+			if (uploadFile(FileList->sharedFiles[fileNumber-1], filePath, connectionSocket) == 0) {
+				printf("%s successfully uploaded.\n\n", FileList->sharedFiles[fileNumber-1]);
+			} else {
+				printf("%s failed to uploaded\n\n", FileList->sharedFiles[fileNumber-1]);
+			}
+
+			free(filePath);
+		}
+	} while (strcmp(fileNumberString, "q") != 0);
+
+	write(connectionSocket, "q", 2);
+}
+
+int uploadFile(char* fileName, char* filePath, int connectionSocket) {
+
+	char fileSizeString[14];
+	int localFile;
+
+	if (((checkAccess(filePath)) >= 4) && ((localFile = open(filePath, O_RDONLY)) > 0)) {
+		// File exists with the correct permissions and opened with no errors
+		
+		struct stat fileStats;
+		fstat(localFile, &fileStats);
+		char serverClearance[3];
+	
+		int sentBytes = 0;
+		off_t offset = 0;
+		long dataRemaining = fileStats.st_size;
+
+		// Send the file size to the client - also lets them know the file is accessable and can be sent
+		sprintf(fileSizeString, "%ld", fileStats.st_size);
+
+		// Write the filename and size to the socket
+		write(connectionSocket, fileSizeString, 14);
+		write(connectionSocket, fileName, strlen(fileName)+1);
+
+		read(connectionSocket, serverClearance, 3);
+
+		if (strcmp(serverClearance, "ok") == 0) {
+		
+			printf("Data Remaining: %ld\n", dataRemaining);
+
+			while (((sentBytes = sendfile(connectionSocket, localFile, &offset, BUFSIZ)) > 0)
+						&& (dataRemaining > 0)) {
+
+				dataRemaining -= sentBytes;
+				printf("Data Remaining: %ld\n", dataRemaining);
+			}
+
+			printf("Done.\n");
+
+		} else {
+
+			return 1;
+		}
+			
+
+	} else {
+		// If the file fails to open, we cannot proceed, so let the server know so they can handle on their end.
+
+		write(connectionSocket,  "error", 6);
+		return 1;	
+	}
+
+	// Close the file and free up the file path.
+	close(localFile);
+
+	return 0;
 }
 
 void downloadFileMenu(fileList_t* FileList, char* shareFolder, int connectionSocket) {

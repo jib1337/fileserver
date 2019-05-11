@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
 #include <sys/sendfile.h>
 
 #include "fileServer.h"
@@ -65,14 +66,14 @@ int clientLogin(threadData_t* serverInfo) {
 	//write(serverInfo->clientSocket, "Username: ", 11);
 	//read(serverInfo->clientSocket, buffer, sizeof(buffer));
 	//strncpy(username, buffer, 10);
-	getSocketInput(username, 11, serverInfo->clientSocket);
+	read(serverInfo->clientSocket, username, 11);
 
 	//bzero(buffer, 256);
 
 	write(serverInfo->clientSocket, "Password: ", 11);
 	//read(serverInfo->clientSocket, buffer, sizeof(buffer));
 	//strncpy(password, buffer, 30);
-	getSocketInput(password, 31, serverInfo->clientSocket);
+	read(serverInfo->clientSocket, password, 31);
 
 	//REMOVE THESE WHEN CLIENT SIDE IS DONE!
 	// Not sure why the hell its making me chomp at two?
@@ -122,19 +123,6 @@ void getKeyboardInput(char* inputString, int inputLength) {
 	}
 }
 
-void getSocketInput(char* inputString, int inputLength, int sockFd) {
-	// Gets and stores input from a socket file descriptor
-
-	read(sockFd, inputString, inputLength);
-	
-	//if (inputLength > 2) {
-		// If the input length is over two, we want to chomp out a newline.
-
-	//	inputString[strlen(inputString)-2] = '\0';
-	//}
-	
-}
-
 void sendFileMenu(threadData_t* ServerInfo) {
 	
 	char menuChoiceString[2];
@@ -144,7 +132,7 @@ void sendFileMenu(threadData_t* ServerInfo) {
 
 	do {
 
-		getSocketInput(menuChoiceString, 2, ServerInfo->clientSocket);
+		read(ServerInfo->clientSocket, menuChoiceString, 2);
 
 		if (strcmp(menuChoiceString, "r") == 0) {
 			listFiles(ServerInfo);
@@ -152,8 +140,78 @@ void sendFileMenu(threadData_t* ServerInfo) {
 			sendFile(ServerInfo);
 		}
 	} while (strcmp(menuChoiceString, "q") != 0);
-
 }
+
+void recieveFileMenu(threadData_t* ServerInfo) {
+
+	char menuChoiceString[2];
+
+	read(ServerInfo->clientSocket, menuChoiceString, 2);
+
+	if (strcmp(menuChoiceString, "u") == 0) {
+		recieveFile(ServerInfo);
+	}
+}
+
+int recieveFile(threadData_t* ServerInfo) {
+	// Recieve a file from the client
+	
+	FILE* fileData;
+	char response[14];
+	char fileName[256];
+
+	// In theory this allows file sizes of multiple terabyes
+
+	read(ServerInfo->clientSocket, response, 14);
+	
+	if (strcmp(response, "error") == 0) {
+		fprintf(stderr, "Log file error\n");
+	} else {
+		printf("Recieving file %s of size %s bytes now...\n", fileName, response);
+
+		char buffer[BUFSIZ];
+		size_t recievedBytes;
+		int remainingData = atoi(response);
+		printf("File Size: %d\n", remainingData);
+
+		read(ServerInfo->clientSocket, fileName, 256);
+
+		printf("File name: %s\n", fileName);
+
+		char* filePath = calloc(1, strlen(ServerInfo->Config->shareFolder) + strlen(fileName) + 2);
+
+		strcpy(filePath, ServerInfo->Config->shareFolder);
+		strcat(filePath, "/");
+		strcat(filePath, fileName);
+
+		printf("File path: %s\n", filePath);
+
+		// let client know its ok to send the file
+		if (remainingData > 0) {
+			write(ServerInfo->clientSocket, "ok", 3);
+		} else {
+			write(ServerInfo->clientSocket, "sz", 3);
+		}
+
+		fileData = fopen(filePath, "w");
+
+		while ((remainingData > 0) && ((recievedBytes = recv(ServerInfo->clientSocket, buffer, BUFSIZ, 0)) > 0)) {
+
+			fwrite(buffer, sizeof(char), recievedBytes, fileData);
+			remainingData -= recievedBytes;
+			printf("Remaining: %d\n", remainingData);
+		}
+
+		printf("Done.\n");
+
+		fclose(fileData);
+		free(filePath);
+
+	}
+
+	return 0;
+}
+
 
 int sendFile(threadData_t* ServerInfo) {
 	// Read a hosted file and display it's contents on screen

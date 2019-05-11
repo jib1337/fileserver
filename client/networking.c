@@ -74,6 +74,7 @@ void serverConnect(config_t* Config) {
 						case (2):
 							printf("Upload\n");
 							write(connectionSocket, "2", 2);
+							uploadFileMenu(&FileList, Config->shareFolder, connectionSocket);
 							break;
 
 						case (3):

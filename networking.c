@@ -87,30 +87,30 @@ void serverStart(config_t* Config, int* serverStarted) {
 	}
 }
 
-void connectionHandler(threadData_t* serverInfo) {
+void connectionHandler(threadData_t* ServerInfo) {
 
-	if (clientLogin(serverInfo) == 1) {
+	if (clientLogin(ServerInfo) == 1) {
 
 		char menuChoiceString[2];
 		int menuChoice = 0;
 
 		// User authenticated successfully
-		write(serverInfo->clientSocket, serverInfo->Config->motd, sizeof(serverInfo->Config->motd));
+		write(ServerInfo->clientSocket, ServerInfo->Config->motd, sizeof(ServerInfo->Config->motd));
 
 		while (menuChoice != 4) {
 
-			getSocketInput(menuChoiceString, 2, serverInfo->clientSocket);
+			read(ServerInfo->clientSocket, menuChoiceString, 2);
 			menuChoice = atoi(menuChoiceString);
 
 			switch (menuChoice) {
 				case (1):
-					listFiles(serverInfo);
+					listFiles(ServerInfo);
 					break;
 				case (2):
-					printf("Upload\n");
+					recieveFileMenu(ServerInfo);
 					break;
 				case (3):
-					sendFileMenu(serverInfo);
+					sendFileMenu(ServerInfo);
 					break;
 				case (4):
 					printf("Quit\n");
@@ -121,7 +121,7 @@ void connectionHandler(threadData_t* serverInfo) {
 	} else {
 
 		// User failed authentication
-		write(serverInfo->clientSocket, "Access Denied.", 14);
+		write(ServerInfo->clientSocket, "Access Denied.", 14);
 	}
 	
 }
