@@ -19,75 +19,83 @@
 #include "security.h"
 #include "files.h"
 
-void serverStart(config_t* Config, int* serverStarted) {
+void serverStart(config_t* Config) {
 
-	pid_t pid;
+	struct sockaddr_in serverAddress, clientAddress;
+	int listenSocket;
 
-	if ((pid = fork()) < 0) {
+	if ((listenSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_IP)) < 0) {
 
-		perror("Could not create server process");
+			perror("Could not create socket");
 
-	} else if (pid == 0) {
+	} else {
+			
+		serverAddress.sin_family = AF_INET;
+		serverAddress.sin_addr.s_addr = inet_addr(Config->ipAddress);
+		serverAddress.sin_port = htons(Config->portNumber);
 
-		// Child / Server process
-		struct sockaddr_in serverAddress, clientAddress;
-		int listenSocket;
-
-		if ((listenSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_IP)) < 0) {
-
-				perror("Could not create socket");
+		if (bind(listenSocket, (struct sockaddr*) &serverAddress, sizeof(struct sockaddr_in)) < 0) {
+				
+			perror("Could not bind port");
 
 		} else {
-			
-			serverAddress.sin_family = AF_INET;
-			serverAddress.sin_addr.s_addr = INADDR_ANY;
-			serverAddress.sin_port = htons(Config->portNumber);
 
-			if (bind(listenSocket, (struct sockaddr*) &serverAddress, sizeof(struct sockaddr_in)) < 0) {
+			// This bit goes in a loop with threading stuff
+			listen(listenSocket, 128);
+
+			// Log the server running and also inform the user
+			char connectionStartMessage[40];
+			sprintf(connectionStartMessage, "Server running on %s:%d", Config->ipAddress, Config->portNumber);
+			logPipe(connectionStartMessage, Config->logFd);
+			printf("\n%s\n", connectionStartMessage);
+
+			int clientSocket;
+			unsigned int clientSize = sizeof(struct sockaddr_in);
 				
-				perror("Could not bind port");
-
-			} else {
-
-				// This bit goes in a loop with threading stuff
-				listen(listenSocket, 128);
-
-				int clientSocket;
-				unsigned int clientSize = sizeof(struct sockaddr_in);
-				
-				if ((clientSocket = accept(listenSocket, (struct sockaddr*) &clientAddress, &clientSize)) < 0) {
+			while ((clientSocket = accept(listenSocket, (struct sockaddr*) &clientAddress, &clientSize))) {
 					
+				if (clientSocket < 0) {
 					perror("Could not accept new connection");
+					break;
 
 				} else {
 				
-					// Build the theadData struct containing everything we need for client interaction	
-					threadData_t serverInfo = {clientSocket, Config};
+					/* Build the theadData struct containing everything we need for client interaction
+					 * Since we don't know how long the server will be running, we'll handle the structure
+				 	 * containing thread data dynamically, so it can be freed when it's not needed anymore.*/
 
-					// Maybe take the client address out later if we dont end up using it?
-					strcpy(serverInfo.clientAddress, inet_ntoa(clientAddress.sin_addr));
+					threadData_t* ServerInfo = calloc(1, sizeof(threadData_t));
+					ServerInfo->clientSocket = clientSocket;
+					ServerInfo->Config = Config;
 
-					logPipe("Client connected\n", Config->logFd);
+					// Maybe take this out later if we don't need the client's address
+					strcpy(ServerInfo->clientAddress, inet_ntoa(clientAddress.sin_addr));
 
-					// Start a new thread and enter the thread function
-					connectionHandler(&serverInfo);
+					logPipe("Client connected", Config->logFd);
+					printf("Client connected\n");
+					
+					pthread_t listenerThread;
+					if ((pthread_create(&listenerThread, NULL, connectionHandler, (void*)ServerInfo)) != 0) {
+						perror("Could not create thread");
+						exit(1);
+
+					}					
 				}
 				
-				close(listenSocket);
-				*serverStarted = 0;
 			}
+			// The program currently does not leave the loop, so this socket will never close.
+			// Nor will the process ever exit.
+			// Probs handle this with a signal to break the loop? Check bookmarks
+			close(listenSocket);
 		}
 
 		exit(0);
-	
-	} else {
-
-		*serverStarted = 1;
-		// Parent / Control process
 	}
 }
 
-void connectionHandler(threadData_t* ServerInfo) {
+void* connectionHandler(void* data) {
+
+	threadData_t* ServerInfo = (threadData_t*) data;
 
 	if (clientLogin(ServerInfo) == 1) {
 
@@ -123,5 +131,11 @@ void connectionHandler(threadData_t* ServerInfo) {
 		// User failed authentication
 		write(ServerInfo->clientSocket, "Access Denied.", 14);
 	}
+
+	close(ServerInfo->clientSocket);
+	free(ServerInfo);
+
+	printf("returning now...");
+	pthread_exit((void*) 0);
 	
 }

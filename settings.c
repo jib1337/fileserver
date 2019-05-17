@@ -6,10 +6,33 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <pthread.h>
+
 #include "fileServer.h"
 #include "settings.h"
 #include "files.h"
 #include "io.h"
+
+// static global for the Config
+static config_t* g_Config;
+
+void* signalListener(void* Config) {
+	
+	// Set the global
+	g_Config = (config_t*) Config;
+
+
+	// In here we listen for signals to arrive then do stuff when they do.
+	// We have access to the global to do whatever is required.
+	printf("%d\n", g_Config->portNumber);
+	
+	pthread_exit((void*) 0);
+
+}
+
+void configReload(config_t* g_config) {
+	// Reload the config stuff in here?
+}
 
 void configRead(char* input, int msgLen, FILE* file) {
 	// Reads a line from the config file. If a line cannot be read, the program will exit.

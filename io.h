@@ -13,7 +13,7 @@ int clientLogin(threadData_t* serverInfo);
 void printWelcome(char* motd);
 // Prints the main menu along with the MOTD
 
-void showMainMenuOptions(int portNumber);
+void showMainMenuOptions();
 // Prints the options for the main menu
 
 void getKeyboardInput(char* inputString, int inputLength);

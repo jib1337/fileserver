@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/wait.h>
+#include <pthread.h>
 
 #include "fileServer.h"
 #include "networking.h"
@@ -16,13 +17,17 @@
 
 int main() {
 
-	char menuChoiceString[2];
-	int menuChoice = 0;
 	int configStatus = 0;
-	int serverStarted = 0;
 
 	// Check/create config and log files
 	config_t Config = configCheck(&configStatus);
+
+	// Start signal listener thread
+	pthread_t signalThread;	
+	if ((pthread_create(&signalThread, NULL, signalListener, (void*)&Config)) != 0) {
+		perror("Could not create thread");
+		exit(1);
+	}
 
 	// Enter credentials to access server control
 	// controlLogin(&Config, configStatus);
@@ -33,21 +38,19 @@ int main() {
 
 	printWelcome(Config.motd);
 
+	char menuChoiceString[2];
+	int menuChoice = 0;
+
 	while (menuChoice != 3) {
 
-		showMainMenuOptions(serverStarted);
+		showMainMenuOptions();
 		getKeyboardInput(menuChoiceString, 2);
 		menuChoice = atoi(menuChoiceString);
 
 		switch(menuChoice) {
 
 			case(1): // Start file server
-
-				if (serverStarted == 0) {
-					serverStart(&Config, &serverStarted);
-				} else {
-					printf("\nServer is currently running\n");
-				}
+				serverStart(&Config);
 				break;
 
 			case(2): // Set server credentials

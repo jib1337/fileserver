@@ -60,27 +60,10 @@ int clientLogin(threadData_t* serverInfo) {
 	bzero(username, 11);
 	bzero(password, 31);
 
-	//printf("\n");
-	//bzero(buffer, 256);
-
-	//write(serverInfo->clientSocket, "Username: ", 11);
-	//read(serverInfo->clientSocket, buffer, sizeof(buffer));
-	//strncpy(username, buffer, 10);
 	read(serverInfo->clientSocket, username, 11);
 
-	//bzero(buffer, 256);
-
 	write(serverInfo->clientSocket, "Password: ", 11);
-	//read(serverInfo->clientSocket, buffer, sizeof(buffer));
-	//strncpy(password, buffer, 30);
 	read(serverInfo->clientSocket, password, 31);
-
-	//REMOVE THESE WHEN CLIENT SIDE IS DONE!
-	// Not sure why the hell its making me chomp at two?
-	//username[strlen(username)-2] = '\0';
-	//password[strlen(password)-2] = '\0';
-	//printf("%s, %ld", username, strlen(username));
-	//printf("%s, %ld", password, strlen(password));
 
 	return(authenticate(serverInfo->Config->serverCreds, username, password));
 }
@@ -96,16 +79,10 @@ void printWelcome(char* motd) {
 	       "----------------------------------------\n", motd);
 }
 
-void showMainMenuOptions(int serverStarted) {
+void showMainMenuOptions() {
 	// Prints the options for the main menu
 
-	if (serverStarted == 0) {
-		printf("\n[1] Start server\n");
-	} else {
-		printf("\n[1] Stop server\n");
-	}
-
-	printf("[2] Set server credentials\n[3] Shutdown Server / Exit\n");
+	printf("[1] Start server\n[2] Set server credentials\n[3] Exit\n");
 	printf("\nSelection: ");
 }
 

@@ -3,12 +3,13 @@
 # Builds the file server application binary
 
 CC = gcc
-CFLAGS = -Wall -lssl -lcrypto #make linker flags?
+CFLAGS = -Wall -lssl -lcrypto -pthread #make linker flags?
 OBJ = fileServer.o logger.o files.o settings.o io.o security.o networking.o
 EXEC = fs
 
 $(EXEC): $(OBJ)
 	$(CC) $(OBJ) -o $(EXEC) $(CFLAGS)
+	make clean
 
 fileServer.o: fileServer.h settings.h logger.h io.h files.h security.h networking.h fileServer.c 
 	$(CC) $(CFLAGS) -c fileServer.c
