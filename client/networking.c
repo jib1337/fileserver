@@ -16,6 +16,9 @@
 #include "files.h"
 #include "io.h"
 
+void getMotd(char* buffer, char* motd) {
+}
+
 void serverConnect(config_t* Config) {
 
 	struct sockaddr_in serverAddress;
@@ -37,23 +40,33 @@ void serverConnect(config_t* Config) {
 
 			char buffer[256];
 			bzero(buffer, 256);
+			char* motd;
 
 			// Send over the username
 			write(connectionSocket, Config->username, strlen(Config->username));
 			read(connectionSocket, buffer, 255);
 
-			// Prompt the user for the password
+			// Prompt the user for the password and send
 			printf("Enter server password: ");
 			getKeyboardInput(buffer, 31);
 			write(connectionSocket, buffer, 31);
 
 			// read the reply from the server
-			read(connectionSocket, buffer, 255);
+			read(connectionSocket, buffer, 255);			       
 
-			printf("%s\n", buffer);	
-
-			if (strcmp(buffer, "Access Denied.") != 0) {
+			if (strcmp(buffer, "Access Denied.") != 0 && (buffer[0] == 'g')
+					&& (buffer[1] == '/')) {
+				// Server returns a special access granted tag with the motd attached.
 				
+				// Set up the motd from this returned message
+				motd = buffer;
+				motd += 2;
+
+			printf("\n----------------------------------------\n"
+			       "Message of the day:\n"
+			       "%s\n"
+			       "----------------------------------------\n", motd);
+	
 				fileList_t FileList = {NULL, 0};
 
 				char menuChoiceString[2];
@@ -94,6 +107,7 @@ void serverConnect(config_t* Config) {
 
 
 			} else {
+				printf("\n%s\n", buffer);
 				printf("Please verfiy your credentials are correct.\n");
 			}
 

@@ -15,6 +15,41 @@
 #include "security.h"
 #include "logger.h"
 
+void controlLogin(config_t* Config, int configStatus) {
+	/* Login screen for access to server control
+	 * Also allows for registering of a server username and password.
+	 *
+	 * Note that if something interrupts the program between the config file being created
+	 * and new credentials being set, the server will use hardcoded defaults of admin:password */
+
+	if (configStatus == 1) {
+
+		printf("----------------------------------------\n"
+		       "          First Run Registration        \n"
+	               "----------------------------------------\n");
+
+		printf("No saved credentials: Please register some now!\n");
+		setCredentials(Config);
+	}
+}
+
+int clientLogin(threadData_t* serverInfo) {
+
+	//char buffer[256];
+	char username[11];
+	char password[31];
+
+	bzero(username, 11);
+	bzero(password, 31);
+
+	read(serverInfo->clientSocket, username, 11);
+
+	write(serverInfo->clientSocket, "Password: ", 11);
+	read(serverInfo->clientSocket, password, 31);
+
+	return(authenticate(serverInfo->Config->serverCreds, username, password));
+}
+
 int authenticate(char* credString, char* username, char* password) {
 	// Check a provided set of credentials against the server credentials
 	// and return integer if they match.
@@ -75,7 +110,7 @@ void setCredentials(config_t* Config) {
 	char credString[128];
 
 	do {
-		printf("New username: ");
+		printf("\nNew username: ");
 		getKeyboardInput(username, 11);
 	} while (validateName(username) == 0);
 
@@ -89,7 +124,7 @@ void setCredentials(config_t* Config) {
 	strcpy(Config->serverCreds, credString);
 	configWrite(Config);
 
-	//printf("Credentials updated.\nNew username: %s\nNew password: %s\n", username, password);
+	printf("Credentials updated.\n\n");
 }
 
 int validateName(char* username) {

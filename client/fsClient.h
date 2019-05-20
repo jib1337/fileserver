@@ -2,9 +2,6 @@
  * fileServer.h
  * Main application header file */
 
-// Max length of the message of the day can be specified below
-#define MAXMOTDLEN 128
-
 // Config structure definition
 // Stores application settings
 typedef struct {

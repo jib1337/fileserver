@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <sys/wait.h>
 #include <pthread.h>
+#include <unistd.h>
+#include <signal.h>
 
 #include "fileServer.h"
 #include "networking.h"
@@ -22,26 +24,22 @@ int main() {
 	// Check/create config and log files
 	config_t Config = configCheck(&configStatus);
 
-	// Start signal listener thread
-	pthread_t signalThread;	
-	if ((pthread_create(&signalThread, NULL, signalListener, (void*)&Config)) != 0) {
-		perror("Could not create thread");
-		exit(1);
-	}
-
 	// Enter credentials to access server control
-	// controlLogin(&Config, configStatus);
+	controlLogin(&Config, configStatus);
 
 	// Start up the logger
 	Config.logFd = startLogger(Config.logFile);
 	logProgramStart(configStatus, Config.logFd);
+
+	// Set the signal handler and global for SIGHUP
+	setConfigHandler(&Config);
 
 	printWelcome(Config.motd);
 
 	char menuChoiceString[2];
 	int menuChoice = 0;
 
-	while (menuChoice != 3) {
+	while (menuChoice != 4) {
 
 		showMainMenuOptions();
 		getKeyboardInput(menuChoiceString, 2);
@@ -58,6 +56,10 @@ int main() {
 				break;
 
 			case(3):
+				displaySettings(&Config);
+				break;
+
+			case(4):
 				// Quit
 				break;
 

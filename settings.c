@@ -6,32 +6,57 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <pthread.h>
+#include <signal.h>
 
 #include "fileServer.h"
 #include "settings.h"
 #include "files.h"
 #include "io.h"
+#include "logger.h"
 
 // static global for the Config
 static config_t* g_Config;
 
-void* signalListener(void* Config) {
+void setConfigHandler(config_t* Config) {
 	
-	// Set the global
 	g_Config = (config_t*) Config;
-
-
-	// In here we listen for signals to arrive then do stuff when they do.
-	// We have access to the global to do whatever is required.
-	printf("%d\n", g_Config->portNumber);
-	
-	pthread_exit((void*) 0);
-
+	signal(SIGHUP, configReload);
 }
 
-void configReload(config_t* g_config) {
-	// Reload the config stuff in here?
+void configReload() {
+
+	signal(SIGHUP, SIG_IGN);
+
+	int fileAccess;
+	FILE* configFile;
+	char portString[6];
+
+	if ((fileAccess = checkAccess("settings.conf")) > -1) {
+		// File exists
+		if ((fileAccess >= 4) && ((configFile = fopen("settings.conf", "r")) != NULL)) {
+			// File has the right permissions and opened okay
+			configRead(portString, 6, configFile);
+			g_Config->portNumber = atoi(portString);
+			configRead(g_Config->ipAddress, 16, configFile);
+			configRead(g_Config->shareFolder, 255, configFile);
+			configRead(g_Config->motd, MAXMOTDLEN, configFile);
+			configRead(g_Config->logFile, 255, configFile);
+			configRead(g_Config->serverCreds, 76, configFile);
+			fclose(configFile);
+
+			logPipe("Updated server configuration from file", g_Config->logFd);
+
+		} else {
+			// The file had the wrong permissions or didn't open
+			logPipe("Error on attempt to update configuration", g_Config->logFd);
+		}
+	} else {
+		// File doesn't exist
+		logPipe("Error on attempt to update configuration", g_Config->logFd);
+	}
+
+
+	signal(SIGHUP, configReload);
 }
 
 void configRead(char* input, int msgLen, FILE* file) {
@@ -128,10 +153,11 @@ int splitCredentials(char* credString, char* username, char* passwordHash) {
 	
 	for (i=0; i<strlen(credString); i++) {
 		if (i <= u) {
-			username[i] = credString[i];
 
 			if (i == u) {
 				username[i] = '\0';
+			} else {
+				username[i] = credString[i];
 			}
 
 		} else {

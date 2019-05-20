@@ -7,6 +7,10 @@
 #include <time.h>
 #include <unistd.h>
 #include <string.h>
+
+// Do I need this?
+#include <signal.h>
+
 #include "logger.h"
 
 void logfileCheck(char* logFilename) {
@@ -87,6 +91,9 @@ int startLogger(char* logFilename) {
 
 		// child process
 		close(logPipe[1]);
+
+		signal(SIGHUP, SIG_IGN);
+
 		logger(logFilename, logPipe[0]);
 	}
 

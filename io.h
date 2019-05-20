@@ -6,15 +6,13 @@
 // Defining how many digits the file number can be. Ten should to be enough right?
 // If not, we can update this value later! =)
 
-void controlLogin(config_t* Config, int configStatus);
-
-int clientLogin(threadData_t* serverInfo);
-
 void printWelcome(char* motd);
 // Prints the main menu along with the MOTD
 
 void showMainMenuOptions();
 // Prints the options for the main menu
+
+void displaySettings(config_t* Config);
 
 void getKeyboardInput(char* inputString, int inputLength);
 // Gets and stores user keyboard input in a given string

@@ -103,6 +103,7 @@ void* connectionHandler(void* data) {
 		int menuChoice = 0;
 
 		// User authenticated successfully
+		write(ServerInfo->clientSocket, "g/", 2);
 		write(ServerInfo->clientSocket, ServerInfo->Config->motd, sizeof(ServerInfo->Config->motd));
 
 		while (menuChoice != 4) {
@@ -135,7 +136,7 @@ void* connectionHandler(void* data) {
 	close(ServerInfo->clientSocket);
 	free(ServerInfo);
 
-	printf("returning now...");
+	printf("thread exiting now...");
 	pthread_exit((void*) 0);
 	
 }

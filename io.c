@@ -18,56 +18,6 @@
 #include "settings.h"
 #include "security.h"
 
-void controlLogin(config_t* Config, int configStatus) {
-	/* Login screen for access to server control
-	 * Also allows for registering of a server username and password.
-	 *
-	 * Note that if something interrupts the program between the config file being created
-	 * and new credentials being set, the server will use hardcoded defaults of admin:password */
-
-	char username[11];
-	char password[31];
-
-	printf("----------------------------------------\n"
-	       "       Server control panel login       \n"
-	       "----------------------------------------\n");
-
-	if (configStatus == 1) {
-		printf("No saved credentials: Please register some now!\n");
-		setCredentials(Config);
-		printf("\nNow test your created credentials by logging in below.\n\n");
-	}
-
-	printf("Username: ");
-	getKeyboardInput(username, 11);
-	printf("Password: ");
-	getKeyboardInput(password, 31);
-
-	if (authenticate(Config->serverCreds, username, password) == 1) {
-		printf("Access granted.\n\n");
-	} else {
-		printf("Access denied.\n");
-		exit(EXIT_FAILURE);
-	}
-}
-
-int clientLogin(threadData_t* serverInfo) {
-
-	//char buffer[256];
-	char username[11];
-	char password[31];
-
-	bzero(username, 11);
-	bzero(password, 31);
-
-	read(serverInfo->clientSocket, username, 11);
-
-	write(serverInfo->clientSocket, "Password: ", 11);
-	read(serverInfo->clientSocket, password, 31);
-
-	return(authenticate(serverInfo->Config->serverCreds, username, password));
-}
-
 void printWelcome(char* motd) {
 	// Prints the main menu along with the MOTD.
 
@@ -82,8 +32,14 @@ void printWelcome(char* motd) {
 void showMainMenuOptions() {
 	// Prints the options for the main menu
 
-	printf("[1] Start server\n[2] Set server credentials\n[3] Exit\n");
+	printf("[1] Start server\n[2] Set server credentials\n[3] Display configuration\n[4] Exit\n");
 	printf("\nSelection: ");
+}
+
+void displaySettings(config_t* Config) {
+	printf("\nCurrent configuration:\n");
+	printf("IP:\t\t%s\nPort:\t\t%d\nShared Folder:\t%s\nMOTD:\t\t%s\n\n",
+			Config->ipAddress, Config->portNumber, Config->shareFolder, Config->motd);
 }
 
 void getKeyboardInput(char* inputString, int inputLength) {
