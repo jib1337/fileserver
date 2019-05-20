@@ -4,12 +4,11 @@
 
 CC = gcc
 CFLAGS = -Wall -lssl -lcrypto -pthread #make linker flags?
-OBJ = fileServer.o logger.o files.o settings.o io.o security.o networking.o
+OBJ = fileServer.o logger.o files.o settings.o io.o security.o networking.o clientlist.o
 EXEC = fs
 
 $(EXEC): $(OBJ)
 	$(CC) $(OBJ) -o $(EXEC) $(CFLAGS)
-	make clean
 
 fileServer.o: fileServer.h settings.h logger.h io.h files.h security.h networking.h fileServer.c 
 	$(CC) $(CFLAGS) -c fileServer.c
@@ -29,8 +28,11 @@ io.o: io.h logger.h files.h settings.h fileServer.h io.c
 security.o: security.h settings.h io.h logger.h networking.h fileServer.h security.c
 	$(CC) $(CFLAGS) -c security.c
 
-networking.o: networking.h logger.h io.h security.h files.h networking.c
+networking.o: networking.h logger.h io.h security.h files.h clientlist.h networking.c
 	$(CC) $(CFLAGS) -c networking.c
+
+clientlist.o: clientlist.h clientlist.c
+	$(CC) $(CFLAGS) -c clientlist.c
 
 clean:
 	rm -vf $(OBJ) *.log

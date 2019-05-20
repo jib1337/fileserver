@@ -7,6 +7,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <signal.h>
+#include <sys/wait.h>
 
 #include "fileServer.h"
 #include "settings.h"
@@ -16,6 +17,18 @@
 
 // static global for the Config
 static config_t* g_Config;
+
+void signalShutdown() {
+	
+	signal(SIGTERM, SIG_IGN);
+	signal(SIGQUIT, SIG_IGN);
+
+	logPipe("Program shut down", g_Config->logFd);
+	printf("\nShut down via signal\n");
+	
+	wait(NULL);
+	exit(0);
+}
 
 void setConfigHandler(config_t* Config) {
 	

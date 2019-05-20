@@ -24,15 +24,17 @@ int main() {
 	// Check/create config and log files
 	config_t Config = configCheck(&configStatus);
 
-	// Enter credentials to access server control
-	controlLogin(&Config, configStatus);
-
 	// Start up the logger
 	Config.logFd = startLogger(Config.logFile);
 	logProgramStart(configStatus, Config.logFd);
 
-	// Set the signal handler and global for SIGHUP
+	// Set up signals for SIGHUP, SIGTERM and SIGQUIT
 	setConfigHandler(&Config);
+	signal(SIGTERM, signalShutdown);
+	signal(SIGQUIT, signalShutdown);
+
+	// First run detection and cred setup
+	controlLogin(&Config, configStatus);
 
 	printWelcome(Config.motd);
 

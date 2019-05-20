@@ -89,7 +89,6 @@ void recieveFileMenu(threadData_t* ServerInfo) {
 int recieveFile(threadData_t* ServerInfo) {
 	// Recieve a file from the client
 	
-	FILE* fileData;
 	char response[14];
 	char fileName[256];
 
@@ -126,18 +125,20 @@ int recieveFile(threadData_t* ServerInfo) {
 			write(ServerInfo->clientSocket, "sz", 3);
 		}
 
-		fileData = fopen(filePath, "w");
+		ServerInfo->recFp = fopen(filePath, "w");
 
 		while ((remainingData > 0) && ((recievedBytes = recv(ServerInfo->clientSocket, buffer, BUFSIZ, 0)) > 0)) {
 
-			fwrite(buffer, sizeof(char), recievedBytes, fileData);
+			fwrite(buffer, sizeof(char), recievedBytes, ServerInfo->recFp);
 			remainingData -= recievedBytes;
 			printf("Remaining: %d\n", remainingData);
 		}
 
 		printf("Done.\n");
 
-		fclose(fileData);
+		fclose(ServerInfo->recFp);
+		ServerInfo->recFp = NULL;
+
 		free(filePath);
 
 	}
@@ -163,13 +164,11 @@ int sendFile(threadData_t* ServerInfo) {
 
 	printf("Sending file: %s\n", filePath);
 
-	int hostedFile;
-
-	if (((checkAccess(filePath)) >= 4) && ((hostedFile = open(filePath, O_RDONLY)) > 0)) {
+	if (((checkAccess(filePath)) >= 4) && ((ServerInfo->sendFd = open(filePath, O_RDONLY)) > 0)) {
 		// File exists with the correct permissions and opened with no errors
 		
 		struct stat fileStats;
-		fstat(hostedFile, &fileStats);
+		fstat(ServerInfo->sendFd, &fileStats);
 	
 		int sentBytes = 0;
 		off_t offset = 0;
@@ -181,7 +180,7 @@ int sendFile(threadData_t* ServerInfo) {
 		
 		printf("Data Remaining: %ld\n", dataRemaining);
 
-		while (((sentBytes = sendfile(ServerInfo->clientSocket, hostedFile, &offset, BUFSIZ)) > 0)
+		while (((sentBytes = sendfile(ServerInfo->clientSocket, ServerInfo->sendFd, &offset, BUFSIZ)) > 0)
 					&& (dataRemaining > 0)) {
 
 			dataRemaining -= sentBytes;
@@ -198,7 +197,9 @@ int sendFile(threadData_t* ServerInfo) {
 	}
 
 	// Close the file and free up the file path.
-	close(hostedFile);
+	close(ServerInfo->sendFd);
+	ServerInfo->sendFd = -1;
+
 	free(filePath);
 
 	return 0;

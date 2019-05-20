@@ -40,7 +40,7 @@ void serverConnect(config_t* Config) {
 
 			char buffer[256];
 			bzero(buffer, 256);
-			char* motd;
+			char* motd = buffer + 2;
 
 			// Send over the username
 			write(connectionSocket, Config->username, strlen(Config->username));
@@ -50,6 +50,9 @@ void serverConnect(config_t* Config) {
 			printf("Enter server password: ");
 			getKeyboardInput(buffer, 31);
 			write(connectionSocket, buffer, 31);
+			
+			// Wipe the password from the buffer
+			//bzero(buffer, 31);
 
 			// read the reply from the server
 			read(connectionSocket, buffer, 255);			       
@@ -59,8 +62,7 @@ void serverConnect(config_t* Config) {
 				// Server returns a special access granted tag with the motd attached.
 				
 				// Set up the motd from this returned message
-				motd = buffer;
-				motd += 2;
+				//motd = buffer + 2;
 
 			printf("\n----------------------------------------\n"
 			       "Message of the day:\n"
