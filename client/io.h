@@ -14,6 +14,8 @@ void showMainMenuOptions();
 //
 void showServerOptions();
 
+void editSettings(config_t* Config);
+
 void getKeyboardInput(char* inputString, int inputLength);
 // Gets and stores user keyboard input in a given string
 

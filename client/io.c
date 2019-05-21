@@ -36,6 +36,66 @@ void showServerOptions() {
 	printf("Selection: ");
 }
 
+void showSettings(config_t* Config) {
+
+	printf("\nCurrent configuration:\n");
+	printf("[1] Username:\t\t%s\n[2] Port:\t\t%d\n[3] Server IP:\t\t%s\n[4] Shared Folder:\t%s\n",
+			Config->username, Config->serverPort, Config->serverIP, Config->shareFolder);
+}
+
+
+void editSettings(config_t* Config) {
+
+	int settingNumber;
+	char settingNumberString[2];
+	char updatedSettingString[256];
+
+	do {
+		showSettings(Config);
+		printf("\n[ q = save and quit to main menu ]\nSelect the number of the setting you wish to change (or option from above)\nSelection: ");
+		getKeyboardInput(settingNumberString, 2);
+		settingNumber = atoi(settingNumberString);
+
+		switch (settingNumber) {
+
+			case(1):
+				printf("Username: ");
+				getKeyboardInput(Config->username, 11);
+				break;
+
+			case(2):
+				printf("Port: ");
+				getKeyboardInput(updatedSettingString, 6);
+				
+				if (atoi(updatedSettingString) != 0) {
+					Config->serverPort = atoi(updatedSettingString);
+				} else {
+					printf("\nError: Invalid port number\n");
+				}
+
+				break;
+
+			case(3):
+				printf("Server IP Address: ");
+				getKeyboardInput(Config->serverIP, 16);
+				break;
+
+			case(4):
+				printf("Shared Folder: ");
+				getKeyboardInput(Config->shareFolder, 256);
+				break;
+			
+			case(0):
+				if (strcmp(settingNumberString, "q") != 0) {
+					printf("\nError: Invalid selection\n");
+				}
+		}
+
+	} while (strcmp(settingNumberString, "q") != 0);
+
+	configWrite(Config);
+}
+
 void getKeyboardInput(char* inputString, int inputLength) {
 	// Gets and stores user keyboard input in a given string
 
@@ -63,23 +123,6 @@ void getSocketInput(char* inputString, int inputLength, int sockFd) {
 	
 }
 
-void freeFileList(fileList_t* FileList) {
-
-	if (FileList->fileCount > 0) {
-
-		int i;
-
-		for (i=0; i<FileList->fileCount; i++) {
-			free(FileList->sharedFiles[i]);
-		}
-
-		free(FileList->sharedFiles);
-
-		FileList->sharedFiles = NULL;
-		FileList->fileCount = 0;
-	}
-}
-
 int getFileList(fileList_t* FileList, int connectionSocket) {
 	// Outputs a list of current files in the shared directory.
 	
@@ -88,7 +131,7 @@ int getFileList(fileList_t* FileList, int connectionSocket) {
 	char buffer[1024];
 	char c[1];
 
-	freeFileList(FileList);	       
+	fileCleanup(FileList);	       
 
 	FileList->sharedFiles = malloc(sizeof(char*) * 20);
 

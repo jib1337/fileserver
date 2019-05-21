@@ -30,6 +30,7 @@ int main() {
 
 	// Set up signals for SIGHUP, SIGTERM and SIGQUIT
 	setConfigHandler(&Config);
+
 	signal(SIGTERM, signalShutdown);
 	signal(SIGQUIT, signalShutdown);
 

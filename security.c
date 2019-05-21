@@ -35,7 +35,6 @@ void controlLogin(config_t* Config, int configStatus) {
 
 int clientLogin(threadData_t* serverInfo) {
 
-	//char buffer[256];
 	char username[11];
 	char password[31];
 

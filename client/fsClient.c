@@ -35,7 +35,7 @@ int main() {
 				break;
 
 			case(2): // Set server credentials
-				printf("Edit stuff\n");
+				editSettings(&Config);	
 				break;
 
 			case(3):

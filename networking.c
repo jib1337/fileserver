@@ -7,6 +7,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -21,7 +22,22 @@
 #include "files.h"
 #include "clientlist.h"
 
-static list_t* g_clientList; 
+static int g_exit = 0;
+
+void connectionSignalShutdown() {
+	// Signal handler for when socket connections may be active
+
+	printf("Shut down via signal\n");
+	g_exit = 1;
+}
+
+void threadExit() {
+
+	printf("Thread closing");
+
+	pthread_detach(pthread_self());
+	pthread_exit(NULL);
+}
 
 void serverStart(config_t* Config) {
 
@@ -44,8 +60,12 @@ void serverStart(config_t* Config) {
 
 		} else {
 
-			//signal(SIGTERM, signalConnectionShutdown);
-			//signal(SIGQUIT, signalConnectionShutdown);
+			struct sigaction action;
+			action.sa_handler = connectionSignalShutdown;
+			action.sa_flags = 0;
+			sigemptyset(&action.sa_mask);
+			sigaction(SIGTERM, &action, NULL);
+			sigaction(SIGQUIT, &action, NULL);
 
 			listen(listenSocket, 128);
 
@@ -58,9 +78,10 @@ void serverStart(config_t* Config) {
 			int clientSocket;
 			unsigned int clientSize = sizeof(struct sockaddr_in);
 			list_t* clientList = newClientList();
-			g_clientList = clientList;
 				
 			while ((clientSocket = accept(listenSocket, (struct sockaddr*) &clientAddress, &clientSize))) {
+
+				if (g_exit == 1) break;
 					
 				if (clientSocket < 0) {
 					perror("Could not accept new connection");
@@ -71,10 +92,10 @@ void serverStart(config_t* Config) {
 					/* Build the theadData struct containing everything we need for client interaction
 					 * Since we don't know how long the server will be running, we'll handle the structure
 				 	 * containing thread data dynamically, so it can be freed when it's not needed anymore.*/
-
+					
 					threadData_t* ServerInfo = calloc(1, sizeof(threadData_t));
-					clientList = insertClient(clientList, ServerInfo);
-
+					insertClient(clientList, ServerInfo);
+					clientList->foot->data->clientList = clientList;
 					clientList->foot->data->clientSocket = clientSocket;
 					clientList->foot->data->Config = Config;
 					clientList->foot->data->recFp = NULL;
@@ -85,22 +106,18 @@ void serverStart(config_t* Config) {
 
 					if ((pthread_create(&clientList->foot->data->threadId, NULL, connectionHandler, (void*)clientList->foot->data)) != 0) {
 						perror("Could not create thread");
-						exit(1);
+						exit(EXIT_FAILURE);
 
 					}
-					
-					// Add the thread data struct to the client linked list
-					clientList = removeClient(clientList, ServerInfo);
-
 				}
-				
 			}
-			// The program currently does not leave the loop, so this socket will never close.
-			// Nor will the process ever exit.
-			// Probs handle this with a signal to break the loop? Check bookmarks
+			
 			close(listenSocket);
+			cleanupClients(clientList);
 		}
-		printf("Exiting...");
+
+		logPipe("Program shut down", Config->logFd);
+		wait(NULL);
 		exit(0);
 	}
 }
@@ -108,6 +125,8 @@ void serverStart(config_t* Config) {
 void* connectionHandler(void* data) {
 
 	threadData_t* ServerInfo = (threadData_t*) data;
+
+	signal(SIGUSR1, threadExit);
 
 	if (clientLogin(ServerInfo) == 1) {
 
@@ -118,7 +137,7 @@ void* connectionHandler(void* data) {
 		// User authenticated successfully, so send access granted tag and motd
 		strcpy(accessMotdString, "g/");
 		strcat(accessMotdString, ServerInfo->Config->motd);
-		write(ServerInfo->clientSocket, accessMotdString, sizeof(accessMotdString));
+		write(ServerInfo->clientSocket, accessMotdString, strlen(accessMotdString)+1);
 
 		while (menuChoice != 4) {
 
@@ -136,7 +155,8 @@ void* connectionHandler(void* data) {
 					sendFileMenu(ServerInfo);
 					break;
 				case (4):
-					printf("Quit\n");
+					// Client disconnecting
+					break;
 			}
 		}
 
@@ -147,10 +167,13 @@ void* connectionHandler(void* data) {
 		write(ServerInfo->clientSocket, "Access Denied.", 14);
 	}
 
+	removeClient(ServerInfo->clientList, ServerInfo);
 	close(ServerInfo->clientSocket);
+
+	logPipe("Client disconnected", ServerInfo->Config->logFd);
+	printf("Client disconnected\n");
 	free(ServerInfo);
 
-	printf("thread exiting now...");
 	pthread_exit((void*) 0);
 	
 }

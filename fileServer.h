@@ -25,10 +25,27 @@ typedef struct {
 	int fileCount;
 } fileList_t;
 
+// One node for each item, and define's the item's position in the list
+typedef struct node node_t;
+typedef struct list list_t;
+
+// The list points to the first item and contains the count of total items
+struct list {
+	node_t* head;
+	node_t* foot;
+	int count;
+};
+
 typedef struct {
+	list_t* clientList;
 	pthread_t threadId;
 	int clientSocket;
 	config_t* Config;
 	FILE* recFp;
 	int sendFd;
 } threadData_t;
+
+struct node {
+	threadData_t* data;
+	node_t* next;
+};

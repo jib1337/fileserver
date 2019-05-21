@@ -97,26 +97,20 @@ int recieveFile(threadData_t* ServerInfo) {
 	read(ServerInfo->clientSocket, response, 14);
 	
 	if (strcmp(response, "error") == 0) {
-		fprintf(stderr, "Log file error\n");
+		fprintf(stderr, "Error - Client unable to send file\n");
 	} else {
-		printf("Recieving file %s of size %s bytes now...\n", fileName, response);
 
 		char buffer[BUFSIZ];
 		size_t recievedBytes;
 		int remainingData = atoi(response);
-		printf("File Size: %d\n", remainingData);
 
 		read(ServerInfo->clientSocket, fileName, 256);
-
-		printf("File name: %s\n", fileName);
 
 		char* filePath = calloc(1, strlen(ServerInfo->Config->shareFolder) + strlen(fileName) + 2);
 
 		strcpy(filePath, ServerInfo->Config->shareFolder);
 		strcat(filePath, "/");
 		strcat(filePath, fileName);
-
-		printf("File path: %s\n", filePath);
 
 		// let client know its ok to send the file
 		if (remainingData > 0) {
@@ -131,10 +125,13 @@ int recieveFile(threadData_t* ServerInfo) {
 
 			fwrite(buffer, sizeof(char), recievedBytes, ServerInfo->recFp);
 			remainingData -= recievedBytes;
-			printf("Remaining: %d\n", remainingData);
 		}
 
-		printf("Done.\n");
+		char* logString = calloc(1, strlen(fileName) + 18);
+		sprintf(logString, "File: %s recieved", fileName);
+		logPipe(logString, ServerInfo->Config->logFd);
+		printf("%s\n", logString);
+		free(logString);
 
 		fclose(ServerInfo->recFp);
 		ServerInfo->recFp = NULL;
@@ -162,8 +159,6 @@ int sendFile(threadData_t* ServerInfo) {
 	strcat(filePath, "/");
 	strcat(filePath, fileName);
 
-	printf("Sending file: %s\n", filePath);
-
 	if (((checkAccess(filePath)) >= 4) && ((ServerInfo->sendFd = open(filePath, O_RDONLY)) > 0)) {
 		// File exists with the correct permissions and opened with no errors
 		
@@ -177,18 +172,18 @@ int sendFile(threadData_t* ServerInfo) {
 		// Send the file size to the client - also lets them know the file is accessable and can be sent
 		sprintf(fileSizeString, "%ld", fileStats.st_size);
 		write(ServerInfo->clientSocket, fileSizeString, 14);
-		
-		printf("Data Remaining: %ld\n", dataRemaining);
 
 		while (((sentBytes = sendfile(ServerInfo->clientSocket, ServerInfo->sendFd, &offset, BUFSIZ)) > 0)
 					&& (dataRemaining > 0)) {
 
 			dataRemaining -= sentBytes;
-			printf("Data Remaining: %ld\n", dataRemaining);
 		}
 
-		printf("Done.");
-			
+		char* logString = calloc(1, strlen(fileName) + 28);
+		sprintf(logString, "File: %s downloaded by client", fileName);
+		logPipe(logString, ServerInfo->Config->logFd);
+		printf("%s\n", logString);
+		free(logString);
 
 	} else {
 		// If the file fails to open, we cannot proceed, so let the client know so they can handle on their end.
