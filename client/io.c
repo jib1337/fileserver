@@ -32,11 +32,14 @@ void showMainMenuOptions() {
 }
 
 void showServerOptions() {
+	// Prints the options when connected to the server
+	
 	printf("\n[1] List shared files\n[2] Upload file\n[3] Download file\n[4] Disconnect\n");
 	printf("Selection: ");
 }
 
 void showSettings(config_t* Config) {
+	// Prints the current configuration settings
 
 	printf("\nCurrent configuration:\n");
 	printf("[1] Username:\t\t%s\n[2] Port:\t\t%d\n[3] Server IP:\t\t%s\n[4] Shared Folder:\t%s\n",
@@ -45,6 +48,7 @@ void showSettings(config_t* Config) {
 
 
 void editSettings(config_t* Config) {
+	// Allows the user to edit the settings
 
 	int settingNumber;
 	char settingNumberString[2];
@@ -67,7 +71,8 @@ void editSettings(config_t* Config) {
 				printf("Port: ");
 				getKeyboardInput(updatedSettingString, 6);
 				
-				if (atoi(updatedSettingString) != 0) {
+				// Just some basic validation on the port
+				if ((atoi(updatedSettingString) != 0) && (atoi(updatedSettingString) < 65536)) {
 					Config->serverPort = atoi(updatedSettingString);
 				} else {
 					printf("\nError: Invalid port number\n");
@@ -93,6 +98,7 @@ void editSettings(config_t* Config) {
 
 	} while (strcmp(settingNumberString, "q") != 0);
 
+	// Save the config back to the settings file
 	configWrite(Config);
 }
 
@@ -197,6 +203,7 @@ int listFiles(fileList_t* FileList, char* shareFolder) {
 }
 
 void uploadFileMenu(fileList_t* FileList, char* shareFolder, int connectionSocket) {
+	// Allows the user to upload a file to the server
 	
 	char fileNumberString[FILENUMBERSTRINGLEN];
 	int fileNumber;
@@ -239,9 +246,9 @@ void uploadFileMenu(fileList_t* FileList, char* shareFolder, int connectionSocke
 			strcat(filePath, FileList->sharedFiles[fileNumber-1]);
 
 			if (uploadFile(FileList->sharedFiles[fileNumber-1], filePath, connectionSocket) == 0) {
-				printf("%s successfully uploaded.\n\n", FileList->sharedFiles[fileNumber-1]);
+				printf("%s successfully uploaded.\n", FileList->sharedFiles[fileNumber-1]);
 			} else {
-				printf("%s failed to uploaded\n\n", FileList->sharedFiles[fileNumber-1]);
+				printf("%s failed to upload\n", FileList->sharedFiles[fileNumber-1]);
 			}
 
 			free(filePath);
@@ -252,6 +259,7 @@ void uploadFileMenu(fileList_t* FileList, char* shareFolder, int connectionSocke
 }
 
 int uploadFile(char* fileName, char* filePath, int connectionSocket) {
+	// Writes a chosen file to a socket
 
 	char fileSizeString[14];
 	int localFile;
@@ -277,17 +285,14 @@ int uploadFile(char* fileName, char* filePath, int connectionSocket) {
 		read(connectionSocket, serverClearance, 3);
 
 		if (strcmp(serverClearance, "ok") == 0) {
-		
-			printf("Data Remaining: %ld\n", dataRemaining);
 
 			while (((sentBytes = sendfile(connectionSocket, localFile, &offset, BUFSIZ)) > 0)
 						&& (dataRemaining > 0)) {
 
 				dataRemaining -= sentBytes;
-				printf("Data Remaining: %ld\n", dataRemaining);
 			}
 
-			printf("Done.\n");
+			printf("%s successfully uploaded to the server\n", fileName);
 
 		} else {
 
@@ -309,6 +314,7 @@ int uploadFile(char* fileName, char* filePath, int connectionSocket) {
 }
 
 void downloadFileMenu(fileList_t* FileList, char* shareFolder, int connectionSocket) {
+	// Allow a user to download a file from the server
 	
 	char fileNumberString[FILENUMBERSTRINGLEN];
 	int fileNumber;
@@ -347,9 +353,9 @@ void downloadFileMenu(fileList_t* FileList, char* shareFolder, int connectionSoc
 			strncat(filePath, FileList->sharedFiles[fileNumber-1], strlen(FileList->sharedFiles[fileNumber-1]));
 			printf("FILE: %s\n", filePath);
 			if (downloadFile(FileList->sharedFiles[fileNumber-1], filePath, connectionSocket) == 0) {
-				printf("%s successfully downloaded.\n\n", FileList->sharedFiles[fileNumber-1]);
+				printf("%s successfully downloaded.\n", FileList->sharedFiles[fileNumber-1]);
 			} else {
-				printf("%s failed to download.\n\n", FileList->sharedFiles[fileNumber-1]);
+				printf("%s failed to download.\n", FileList->sharedFiles[fileNumber-1]);
 			}
 
 			free(filePath);
@@ -360,6 +366,7 @@ void downloadFileMenu(fileList_t* FileList, char* shareFolder, int connectionSoc
 }
 
 int downloadFile(char* fileName, char* filePath, int connectionSocket) {
+	// Recieves a file from a socket and writes it to storage
 
 	FILE* fileData;
 	char response[14];
@@ -369,14 +376,14 @@ int downloadFile(char* fileName, char* filePath, int connectionSocket) {
 	read(connectionSocket, response, 14);
 	
 	if (strcmp(response, "error") == 0) {
-		fprintf(stderr, "Error: File was unable to be downloaded\n");
+		return 1;
+
 	} else {
 		printf("Downloading %s of size %s bytes now...\n", fileName, response);
 
 		char buffer[BUFSIZ];
 		size_t recievedBytes;
 		int remainingData = atoi(response);
-		printf("File Size: %d\n", remainingData);
 
 		fileData = fopen(filePath, "w");
 
@@ -384,7 +391,6 @@ int downloadFile(char* fileName, char* filePath, int connectionSocket) {
 
 			fwrite(buffer, sizeof(char), recievedBytes, fileData);
 			remainingData -= recievedBytes;
-			printf("Remaining: %d\n", remainingData);
 		}
 
 		fclose(fileData);

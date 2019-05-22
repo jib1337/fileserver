@@ -19,23 +19,21 @@
 
 int main() {
 
+	// Get the config
 	int configStatus = 0;
-
-	// Check/create config and log files
 	config_t Config = configCheck(&configStatus);
 
-	// Start up the logger
+	// Start up the logger and log what happened with the config
 	Config.logFd = startLogger(Config.logFile);
 	logProgramStart(configStatus, Config.logFd);
 
-	// Set up signals for SIGHUP, SIGTERM and SIGQUIT
+	// Set up signals
 	setConfigHandler(&Config);
-
 	signal(SIGTERM, signalShutdown);
 	signal(SIGQUIT, signalShutdown);
 
 	// First run detection and cred setup
-	controlLogin(&Config, configStatus);
+	firstRunRegister(&Config, configStatus);
 
 	printWelcome(Config.motd);
 
@@ -50,11 +48,11 @@ int main() {
 
 		switch(menuChoice) {
 
-			case(1): // Start file server
+			case(1):
 				serverStart(&Config);
 				break;
 
-			case(2): // Set server credentials
+			case(2):
 				setCredentials(&Config);
 				break;
 

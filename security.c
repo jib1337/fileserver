@@ -15,12 +15,12 @@
 #include "security.h"
 #include "logger.h"
 
-void controlLogin(config_t* Config, int configStatus) {
-	/* Login screen for access to server control
-	 * Also allows for registering of a server username and password.
+void firstRunRegister(config_t* Config, int configStatus) {
+	/* First run credential registration screen
+	 * Allows for registering of a server username and password.
 	 *
 	 * Note that if something interrupts the program between the config file being created
-	 * and new credentials being set, the server will use hardcoded defaults of admin:password */
+	 * and new credentials being set, the server will use defaults of admin:password */
 
 	if (configStatus == 1) {
 
@@ -34,6 +34,7 @@ void controlLogin(config_t* Config, int configStatus) {
 }
 
 int clientLogin(threadData_t* serverInfo) {
+	// Interfaces with client socket to recieve user credentials for authentication
 
 	char username[11];
 	char password[31];
@@ -51,7 +52,7 @@ int clientLogin(threadData_t* serverInfo) {
 
 int authenticate(char* credString, char* username, char* password) {
 	// Check a provided set of credentials against the server credentials
-	// and return integer if they match.
+	// and return integer if they match
 
 	char serverUsername[11];
 	char serverPasswordHash[65];
@@ -69,8 +70,8 @@ int authenticate(char* credString, char* username, char* password) {
 }
 
 int checkPassword(char* password, char* currentPasswordHash) {
-	// Compares a known current password hash with a hash generated from
-	// given password input string, then returns integer indicating if it's a match or not.
+	/* Compares a known current password hash with a hash generated from
+	 * given password input string, then returns integer indicating if it's a match or not */
 
 	char hash[65];
 
@@ -84,7 +85,7 @@ int checkPassword(char* password, char* currentPasswordHash) {
 }
 
 void genHash(char* textString, unsigned long length, char* hashString) {
-	// Generates a SHA256 hash of a given string using the openssl library.
+	// Generates a SHA256 hash of a given string using the openssl library
 
 	unsigned char hash[65];
 	SHA256_CTX ctx;
@@ -100,8 +101,8 @@ void genHash(char* textString, unsigned long length, char* hashString) {
 }
 
 void setCredentials(config_t* Config) {
-	// Provides interface for user to change the server credentials, and then updates
-	// them in the config file.
+	/* Provides interface for user to change the server credentials, and then updates
+	 * them in the config file */
 	
 	char username[11];
 	char password[31];
@@ -127,23 +128,21 @@ void setCredentials(config_t* Config) {
 }
 
 int validateName(char* username) {
-	// validates a username to ensure only alphabetic characters are entered
+	// Validates a username to ensure only alphabetic characters are entered
 
 	int i;
 
 	if (strlen(username) == 0) {
-		fprintf(stderr, "\nError: Username must be at least 1 character long.\n");
+		fprintf(stderr, "\nError - Username must be at least 1 character long.\n");
 		return 0;
 	}
 
 	for (i=0; i<strlen(username); i++) {
 		if (isalpha(username[i]) == 0) {
-			fprintf(stderr, "\nError: Username can only consist of alphabet characters.\nPlease try again.\n");
+			fprintf(stderr, "\nError - Username can only consist of alphabet characters.\nPlease try again.\n");
 			return 0;
 		}
 	}
 
 	return 1;
 }
-
-

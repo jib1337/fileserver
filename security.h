@@ -2,7 +2,7 @@
  * security.h
  * security.c header file */
 
-void controlLogin(config_t* Config, int configStatus);
+void firstRunRegister(config_t* Config, int configStatus);
 int clientLogin(threadData_t* serverInfo);
 int authenticate(char* credentials, char* username, char* password);
 int checkPassword(char* password, char* currentPasswordHash);

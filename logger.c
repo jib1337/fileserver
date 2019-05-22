@@ -7,11 +7,12 @@
 #include <time.h>
 #include <unistd.h>
 #include <string.h>
-
-// Do I need this?
+#include <pthread.h>
 #include <signal.h>
 
 #include "logger.h"
+
+static pthread_mutex_t m_writeLog = PTHREAD_MUTEX_INITIALIZER;
 
 void logfileCheck(char* logFilename) {
 	// Check the existance of the logfile and create it if nessecary
@@ -35,7 +36,7 @@ void logfileCheck(char* logFilename) {
 }
 
 void getTime(char* timestr) {
-	// Create and return a string containing the current date and time
+	// Create and return a string containing the current date and time.
 
 	time_t rawtime = time(NULL);
 	strcpy(timestr, ctime(&rawtime));
@@ -44,7 +45,7 @@ void getTime(char* timestr) {
 
 
 void logger(char* logFilename, int log) {
-	// Logger process logs messages from here
+	// Logger process logs messages from here.
 
 	FILE* logFile;
 	char message[255];
@@ -91,9 +92,9 @@ int startLogger(char* logFilename) {
 
 		// child process
 		close(logPipe[1]);
-
 		signal(SIGHUP, SIG_IGN);
-
+		signal(SIGTERM, SIG_IGN);
+		signal(SIGQUIT, SIG_IGN);
 		logger(logFilename, logPipe[0]);
 	}
 
@@ -102,8 +103,11 @@ int startLogger(char* logFilename) {
 
 void logPipe(char* message, int log) {
 	// Pipe the message through to the logging process.
+	// This is protected via a mutex to ensure one write at a time.
 
+	pthread_mutex_lock(&m_writeLog);
 	write(log, message, strlen(message)+1);
+	pthread_mutex_unlock(&m_writeLog);
 }
 
 void logProgramStart(int configStatus, int log) {

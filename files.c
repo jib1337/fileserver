@@ -12,6 +12,7 @@
 #include "files.h"
 
 void listFiles(threadData_t* serverInfo) {
+	// Send a list of all shared files to a client socket
 
 	DIR *d;
 	struct dirent* dir;
@@ -19,18 +20,6 @@ void listFiles(threadData_t* serverInfo) {
 	char buffer[1024];
 	
 	if (d) {
-
-		/* No need to do this.
-
-		while ((dir = readdir(d)) != NULL) {
-			if (dir->d_name[0] == '.') continue;
-			FileList->fileCount++;
-		}
-
-		rewinddir(d);
-
-		FileList->sharedFiles = malloc(sizeof(char*) * FileList->fileCount);
-		*/
 
 		while ((dir = readdir(d)) != NULL) {
 
@@ -44,12 +33,6 @@ void listFiles(threadData_t* serverInfo) {
 			buffer[strlen(dir->d_name)+1] = '\0';
 
 			write(serverInfo->clientSocket, buffer, strlen(buffer));
-			
-			//printf("%s", buffer);
-
-			//FileList->sharedFiles[i] = (char*)calloc(1, strlen(dir->d_name)+1);
-			//strncpy(FileList->sharedFiles[i], dir->d_name, strlen(dir->d_name));
-			//i++;
 		}
 
 		closedir(d);
@@ -58,22 +41,13 @@ void listFiles(threadData_t* serverInfo) {
 		fflush(stdout);
 
 	} else {
-
-		perror("Error: Directory unable to be scanned");
+		perror("Error - Directory unable to be scanned");
 	}
 }
 
-/*int fileSize(int fd) {
-	// Return the byte size of a file
-
-	lseek(file, 0, 2);
-	
-	return(tell(file));
-}*/
-
 int checkAccess(char* fileName) {
-	// Checks the read, write and execute persmissions of a file and returns a number that represents the current access.
-	// Similar to the octal value in chmod but not done with bits.
+	/* Checks the read, write and execute persmissions of a file and returns a number that represents the current access
+	 * Similar to the octal value in chmod but not done with bits */
 
 	if (access(fileName, F_OK)) {
 		// File doesn't exist so we can end it here

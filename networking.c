@@ -25,17 +25,16 @@
 static int g_exit = 0;
 
 void connectionSignalShutdown() {
-	// Signal handler for when socket connections may be active
+	/* Signal handler for SIGQUIT and SIGTERM when server is up
+	 * Sets a global flag to leave accept loop */
 
 	printf("Shut down via signal\n");
 	g_exit = 1;
 }
 
 void threadExit() {
+	// Signal handler for exiting a thread, called via SIGUSR1
 
-	printf("Thread closing");
-
-	pthread_detach(pthread_self());
 	pthread_exit(NULL);
 }
 
@@ -46,7 +45,7 @@ void serverStart(config_t* Config) {
 
 	if ((listenSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_IP)) < 0) {
 
-			perror("Could not create socket");
+			perror("Error - Could not create socket");
 
 	} else {
 			
@@ -56,10 +55,11 @@ void serverStart(config_t* Config) {
 
 		if (bind(listenSocket, (struct sockaddr*) &serverAddress, sizeof(struct sockaddr_in)) < 0) {
 				
-			perror("Could not bind port");
+			perror("Error - Could not bind port");
 
 		} else {
 
+			// Change the signal handling over for SIGQUIT and SIGTERM
 			struct sigaction action;
 			action.sa_handler = connectionSignalShutdown;
 			action.sa_flags = 0;
@@ -80,11 +80,12 @@ void serverStart(config_t* Config) {
 			list_t* clientList = newClientList();
 				
 			while ((clientSocket = accept(listenSocket, (struct sockaddr*) &clientAddress, &clientSize))) {
+				// Listen for clients and accept incoming connections
 
-				if (g_exit == 1) break;
+				if (g_exit == 1) break; // Break out if global has been flipped
 					
 				if (clientSocket < 0) {
-					perror("Could not accept new connection");
+					perror("Error - Could not accept new connection");
 					break;
 
 				} else {
@@ -94,47 +95,54 @@ void serverStart(config_t* Config) {
 				 	 * containing thread data dynamically, so it can be freed when it's not needed anymore.*/
 					
 					threadData_t* ServerInfo = calloc(1, sizeof(threadData_t));
+
+					ServerInfo->clientList = clientList;
+					ServerInfo->clientSocket = clientSocket;
+					ServerInfo->Config = Config;
+					ServerInfo->recFd = -1;
+					ServerInfo->sendFd = -1;
+					
 					insertClient(clientList, ServerInfo);
-					clientList->foot->data->clientList = clientList;
-					clientList->foot->data->clientSocket = clientSocket;
-					clientList->foot->data->Config = Config;
-					clientList->foot->data->recFp = NULL;
-					clientList->foot->data->sendFd = -1;
 
 					logPipe("Client connected", Config->logFd);
 					printf("Client connected\n");
 
-					if ((pthread_create(&clientList->foot->data->threadId, NULL, connectionHandler, (void*)clientList->foot->data)) != 0) {
-						perror("Could not create thread");
+					if ((pthread_create(&ServerInfo->threadId, NULL, connectionHandler, (void*)ServerInfo)) != 0) {
+						perror("Error - Could not create thread");
 						exit(EXIT_FAILURE);
 
 					}
 				}
 			}
 			
+			// Close the listener socket and clean out the client list
 			close(listenSocket);
 			cleanupClients(clientList);
 		}
 
 		logPipe("Program shut down", Config->logFd);
+
 		wait(NULL);
-		exit(0);
+		exit(EXIT_SUCCESS);
 	}
 }
 
 void* connectionHandler(void* data) {
+	// Starting point for a client handler thread
 
 	threadData_t* ServerInfo = (threadData_t*) data;
 
+	pthread_detach(pthread_self());
 	signal(SIGUSR1, threadExit);
 
 	if (clientLogin(ServerInfo) == 1) {
+		// Client authenticated successfully
 
 		char menuChoiceString[2];
 		int menuChoice = 0;
 		char accessMotdString[ACCMOTDLEN];
 
-		// User authenticated successfully, so send access granted tag and motd
+		// Send access granted tag and motd
 		strcpy(accessMotdString, "g/");
 		strcat(accessMotdString, ServerInfo->Config->motd);
 		write(ServerInfo->clientSocket, accessMotdString, strlen(accessMotdString)+1);
@@ -162,17 +170,18 @@ void* connectionHandler(void* data) {
 
 
 	} else {
-
 		// User failed authentication
 		write(ServerInfo->clientSocket, "Access Denied.", 14);
 	}
 
+	// Before exit: remove self from list, close socket and free data
 	removeClient(ServerInfo->clientList, ServerInfo);
 	close(ServerInfo->clientSocket);
+	free(ServerInfo);
 
+	// Log disconnect message and display
 	logPipe("Client disconnected", ServerInfo->Config->logFd);
 	printf("Client disconnected\n");
-	free(ServerInfo);
 
 	pthread_exit((void*) 0);
 	

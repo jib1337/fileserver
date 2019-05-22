@@ -2,12 +2,14 @@
  * fileServer.h
  * Main application header file */
 
-// Max length of the message of the day can be specified below
+// Max length of the message of the day string
 #define MAXMOTDLEN 128
+
+// Length of the <access granted> string to be sent when the user authenticates, which contains MOTD
 #define ACCMOTDLEN MAXMOTDLEN + 2
 
-// Config structure definition
-// Stores application settings
+/* Config structure definition
+ * Stores application settings */
 typedef struct {
 	short portNumber;
 	char ipAddress[16];
@@ -18,30 +20,33 @@ typedef struct {
 	int logFd;
 } config_t;
 
-// Filelist structure definition
-// Stores shared file directory details
+/* File list structure definition
+ * Stores shared file directory details */
 typedef struct {
 	char** sharedFiles;
 	int fileCount;
 } fileList_t;
 
-// One node for each item, and define's the item's position in the list
+
+/* Client linked list structure definitions
+ * Defined futher below - used to storing thread data structs */
 typedef struct node node_t;
 typedef struct list list_t;
 
-// The list points to the first item and contains the count of total items
 struct list {
 	node_t* head;
 	node_t* foot;
 	int count;
 };
 
+/* Thread data structure definition
+ * Stores data to be passed into client handler threads */
 typedef struct {
 	list_t* clientList;
 	pthread_t threadId;
 	int clientSocket;
 	config_t* Config;
-	FILE* recFp;
+	int recFd;
 	int sendFd;
 } threadData_t;
 

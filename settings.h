@@ -11,15 +11,8 @@
 
 void signalShutdown();
 void setConfigHandler(config_t* Config);
-
 void configReload();
-
 void configRead(char* input, int msgLen, FILE* file);
-// Reads a line from the config file. If a line cannot be read, the program will exit
-
 config_t configCheck(int* configStatus);
-//Check the existance of the config file and it's contents
-
 void configWrite(config_t* Config);
-
 int splitCredentials(char* credString, char* serverUsername, char* serverPasswordHash);

@@ -16,9 +16,6 @@
 #include "files.h"
 #include "io.h"
 
-void getMotd(char* buffer, char* motd) {
-}
-
 void serverConnect(config_t* Config) {
 
 	struct sockaddr_in serverAddress;
