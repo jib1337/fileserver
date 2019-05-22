@@ -7,33 +7,16 @@
 // If not, we can update this value later! =)
 
 void printWelcome();
-// Prints the main menu along with the MOTD
-
 void showMainMenuOptions();
-// Prints the options for the main menu
-//
 void showServerOptions();
-
+void serverMenu(config_t* Config, fileList_t* FileList, int connectionSocket);
 void editSettings(config_t* Config);
-
 void getKeyboardInput(char* inputString, int inputLength);
-// Gets and stores user keyboard input in a given string
-
 void getSocketInput(char* inputString, int inputLength, int sockFd);
-
 int listFiles(fileList_t* FileList, char* shareFolder); 
-
 int getFileList(fileList_t* FileList, int connectionSocket);
-// Outputs a list of current files in the shared directory
-
 void printFileContent (int* fileNum, char* fileName, config_t* Config, int log);
-// Read a hosted file and display it's contents on screen
-
 void uploadFileMenu(fileList_t* FileList, char* shareFolder, int connectionSocket); 
 int uploadFile(char* fileName, char* filePath, int connectionSocket);
 void downloadFileMenu(fileList_t* FileList, char* shareFolder, int connectionSocket);
-// Displays a menu for the user to choose which file to download
-
 int downloadFile(char* fileName, char* filePath, int connectionSocket);
-// Request and recieve a file from the server
-

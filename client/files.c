@@ -7,16 +7,17 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <string.h>
+
 #include "fsClient.h"
 #include "files.h"
 
 void fileCleanup(fileList_t* FileList) {
-	// Frees up all memory utilized by the current file list.
+	// Frees up all memory utilized by the current file list
 	
 	int i;
 
 	if (FileList->sharedFiles != NULL) {
-		// We won't bother doing this if we havent allocated any memory yet.
+		// We won't bother doing this if we havent allocated any memory yet
 
 		for (i=0;i<FileList->fileCount;i++) {
 
@@ -30,9 +31,8 @@ void fileCleanup(fileList_t* FileList) {
 }
 
 void getFiles(fileList_t* FileList, char* shareFolder) {
-	/* Retrieves names of files from the shared folder and stores them in
-	 * a FileList struct.
-	 * If we already have information in the list, we'll free up that memory before retrieving again.
+	/* Retrieves names of files from the shared folder and stores them in a filelist struct
+	 * If we already have information in the list, we'll free up that memory before retrieving again
 	 * This function can be used anywhere to refresh the file list */
 
 	fileCleanup(FileList);

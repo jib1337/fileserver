@@ -38,6 +38,45 @@ void showServerOptions() {
 	printf("Selection: ");
 }
 
+void serverMenu(config_t* Config, fileList_t* FileList, int connectionSocket) {
+
+	char menuChoiceString[2];
+	int menuChoice = 0;
+
+	while (menuChoice != 4) {
+
+		showServerOptions();
+		getKeyboardInput(menuChoiceString, 2);
+		menuChoice = atoi(menuChoiceString);
+
+		switch (menuChoice) {
+			case (1):
+				write(connectionSocket, "1", 2);
+				getFileList(FileList, connectionSocket);
+				break;
+
+			case (2):
+				write(connectionSocket, "2", 2);
+				uploadFileMenu(FileList, Config->shareFolder, connectionSocket);
+				break;
+
+			case (3):
+				write(connectionSocket, "3", 2);
+				downloadFileMenu(FileList, Config->shareFolder, connectionSocket);
+				break;
+						
+			case (4):
+				// Exit
+				write(connectionSocket, "4", 2);
+				break;
+						
+			default:
+				printf("Invalid choice\n");
+		}
+	}
+}
+
+
 void showSettings(config_t* Config) {
 	// Prints the current configuration settings
 
@@ -114,19 +153,6 @@ void getKeyboardInput(char* inputString, int inputLength) {
 	} else {
 		while ((ch = getchar() != '\n') && (ch != EOF));
 	}
-}
-
-void getSocketInput(char* inputString, int inputLength, int sockFd) {
-	// Gets and stores input from a socket file descriptor
-
-	read(sockFd, inputString, inputLength);
-	
-	if (inputLength > 2) {
-		// If the input length is over two, we want to chomp out a newline.
-
-		inputString[strlen(inputString)-2] = '\0';
-	}
-	
 }
 
 int getFileList(fileList_t* FileList, int connectionSocket) {
@@ -302,7 +328,6 @@ int uploadFile(char* fileName, char* filePath, int connectionSocket) {
 
 	} else {
 		// If the file fails to open, we cannot proceed, so let the server know so they can handle on their end.
-
 		write(connectionSocket,  "error", 6);
 		return 1;	
 	}
@@ -351,7 +376,6 @@ void downloadFileMenu(fileList_t* FileList, char* shareFolder, int connectionSoc
 			strncpy(filePath, shareFolder, strlen(shareFolder));
 			strcat(filePath, "/");
 			strncat(filePath, FileList->sharedFiles[fileNumber-1], strlen(FileList->sharedFiles[fileNumber-1]));
-			printf("FILE: %s\n", filePath);
 			if (downloadFile(FileList->sharedFiles[fileNumber-1], filePath, connectionSocket) == 0) {
 				printf("%s successfully downloaded.\n", FileList->sharedFiles[fileNumber-1]);
 			} else {

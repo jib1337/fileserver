@@ -2,5 +2,4 @@
  * networking.h
  * networking.c header file */
 
-void serverConnect(config_t* Config);
-void connectionHandler(threadData_t* serverInfo);
+void serverConnect(config_t* Config, fileList_t* FileList);

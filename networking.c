@@ -27,7 +27,7 @@ void connectionSignalShutdown() {
 	/* Signal handler for SIGQUIT and SIGTERM when server is up
 	 * Sets a global flag to leave accept loop */
 
-	printf("Shut down via signal\n");
+	printf("\nShut down via signal\n");
 	g_exit = 1;
 }
 

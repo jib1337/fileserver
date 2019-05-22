@@ -84,15 +84,19 @@ void recieveFileMenu(threadData_t* ServerInfo) {
 
 	char menuChoiceString[2];
 
+	do {
+
 	read(ServerInfo->clientSocket, menuChoiceString, 2);
 
 	if (strcmp(menuChoiceString, "u") == 0) {
 		if (recieveFile(ServerInfo) != 0) {
-			fprintf(stderr, "Error - Attempt by client to upload file failed\n");
+			perror("Error - Attempt by client to upload file failed\n");
 			fflush(stdout);
 			logPipe("Client failed to upload file", ServerInfo->Config->logFd);
 		}
 	}
+
+	} while (strcmp(menuChoiceString, "q") != 0);
 }
 
 int recieveFile(threadData_t* ServerInfo) {
@@ -105,8 +109,9 @@ int recieveFile(threadData_t* ServerInfo) {
 	
 	if (strcmp(response, "error") == 0) {
 		// Something went wrong on the client's end
-
+		
 		return 1;
+
 	} else {
 
 		char buffer[BUFSIZ];
@@ -126,13 +131,16 @@ int recieveFile(threadData_t* ServerInfo) {
 		strcat(filePath, "/");
 		strcat(filePath, fileName);
 
-		if ((remainingData > 0) && ((ServerInfo->recFd = open(filePath, O_WRONLY | O_CREAT | O_EXCL)) > 0)) {
+		if ((remainingData > 0) && ((ServerInfo->recFd = open(filePath, O_WRONLY | O_CREAT,
+							S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) > 0)) {
 			/* If the response was valid and the file was able to be opened without errors
 			 * Lock the file and let the client know we're ready to recieve */
-			fcntl(ServerInfo->recFd, F_SETLKW, &fileLock);
+			//fcntl(ServerInfo->recFd, F_SETLKW, &fileLock);
 			write(ServerInfo->clientSocket, "ok", 3);
+
 		} else {
-			// Something went wrong, inform the client
+			// Something went wrong on our end, inform the client
+			
 			write(ServerInfo->clientSocket, "sz", 3);
 			return 1;
 		}
@@ -146,8 +154,8 @@ int recieveFile(threadData_t* ServerInfo) {
 		// Close file and unlock
 		close(ServerInfo->recFd);
 		ServerInfo->recFd = -1;
-		fileLock.l_type = F_UNLCK;
-		fcntl(ServerInfo->recFd, F_SETLKW, &fileLock);
+		//fileLock.l_type = F_UNLCK;
+		//fcntl(ServerInfo->recFd, F_SETLKW, &fileLock);
 		
 		// Log the download
 		char* logString = calloc(1, strlen(fileName) + 18);
@@ -184,7 +192,7 @@ int sendFile(threadData_t* ServerInfo) {
 	if (((checkAccess(filePath)) >= 4) && ((ServerInfo->sendFd = open(filePath, O_RDONLY)) > 0)) {
 		// File exists with the correct permissions and opened with no errors
 		
-		fcntl(ServerInfo->sendFd, F_SETLKW, &fileLock);
+		//fcntl(ServerInfo->sendFd, F_SETLKW, &fileLock);
 		
 		struct stat fileStats;
 		fstat(ServerInfo->sendFd, &fileStats);
@@ -205,8 +213,8 @@ int sendFile(threadData_t* ServerInfo) {
 		// Close and remove the lock
 		close(ServerInfo->sendFd);
 		ServerInfo->sendFd = -1;
-		fileLock.l_type = F_UNLCK;
-		fcntl(ServerInfo->sendFd, F_SETLKW, &fileLock);
+		//fileLock.l_type = F_UNLCK;
+		//fcntl(ServerInfo->sendFd, F_SETLKW, &fileLock);
 
 		// Log the operation
 		char* logString = calloc(1, strlen(fileName) + 28);
@@ -222,7 +230,7 @@ int sendFile(threadData_t* ServerInfo) {
 		write(ServerInfo->clientSocket,  "error", 6);
 
 		// Log and display a message
-		fprintf(stderr, "Error - %s unable to be sent to client\n", fileName);
+		fprintf(stderr, "Error - %s failed to be sent to client\n", fileName);
 		char* logString = calloc(1, strlen(fileName)+35);
 		sprintf(logString, "File: %s failed to be sent to client", fileName);
 		logPipe(logString, ServerInfo->Config->logFd);

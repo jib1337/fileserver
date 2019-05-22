@@ -22,7 +22,7 @@ files.o: files.h fsClient.h files.c
 io.o: io.h files.h settings.h fsClient.h io.c
 	$(CC) $(CFLAGS) -c io.c
 
-networking.o: networking.h io.h networking.c
+networking.o: fsClient.h networking.h files.h io.h networking.c
 	$(CC) $(CFLAGS) -c networking.c
 
 clean:

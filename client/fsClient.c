@@ -7,12 +7,14 @@
 #include <sys/wait.h>
 
 #include "fsClient.h"
-#include "files.h"
 #include "io.h"
+#include "files.h"
 #include "settings.h"
 #include "networking.h"
 
 int main() {
+
+	fileList_t FileList = {NULL, 0};
 
 	char menuChoiceString[2];
 	int menuChoice = 0;
@@ -31,7 +33,7 @@ int main() {
 		switch(menuChoice) {
 
 			case(1): // Start file server
-				serverConnect(&Config);
+				serverConnect(&Config, &FileList);
 				break;
 
 			case(2): // Set server credentials
@@ -46,6 +48,9 @@ int main() {
 				printf("\nError: Invalid menu choice.\n");
 		}
 	}
+
+	// Free the filelist before exit
+	fileCleanup(&FileList);
 
 	return 0;
 }
