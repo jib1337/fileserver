@@ -15,4 +15,3 @@ void configReload();
 void configRead(char* input, int msgLen, FILE* file);
 config_t configCheck(int* configStatus);
 void configWrite(config_t* Config);
-int splitCredentials(char* credString, char* serverUsername, char* serverPasswordHash);

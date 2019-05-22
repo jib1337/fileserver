@@ -19,7 +19,6 @@
 #include "io.h"
 #include "logger.h"
 #include "security.h"
-#include "files.h"
 #include "clientlist.h"
 
 static int g_exit = 0;

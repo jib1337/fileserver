@@ -11,7 +11,6 @@
 
 #include "fileServer.h"
 #include "settings.h"
-#include "files.h"
 #include "io.h"
 #include "logger.h"
 
@@ -153,39 +152,4 @@ void configWrite(config_t* Config) {
 	fprintf(configFile, "%hi\n%s\n%s\n%s\n%s\n%s\n", Config->portNumber, Config->ipAddress, Config->shareFolder, 
 			Config->motd, Config->logFile, Config->serverCreds);
 	fclose(configFile);
-}
-
-int splitCredentials(char* credString, char* username, char* passwordHash) {
-	// Split a string of user:password credentials stored in the settings file into two seperate strings
-
-	int u, i, j=0;
-
-	for (u=0; u<strlen(credString); u++) {
-		if (credString[u] == ':') {
-
-			if (u == 0) return 1;
-			break;
-		}
-	}
-	
-	for (i=0; i<strlen(credString); i++) {
-		if (i <= u) {
-
-			if (i == u) {
-				username[i] = '\0';
-			} else {
-				username[i] = credString[i];
-			}
-
-		} else {
-			passwordHash[j] = credString[i];
-			j++;
-
-			if (i+1 == strlen(credString)) {
-				passwordHash[j] = '\0';
-			}
-		}
-	}	
-
-	return 0;
 }

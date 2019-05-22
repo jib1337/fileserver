@@ -27,7 +27,6 @@ typedef struct {
 	int fileCount;
 } fileList_t;
 
-
 /* Client linked list structure definitions
  * Defined futher below - used to storing thread data structs */
 typedef struct node node_t;

@@ -11,7 +11,6 @@
 
 #include "fileServer.h"
 #include "networking.h"
-#include "files.h"
 #include "logger.h"
 #include "io.h"
 #include "settings.h"

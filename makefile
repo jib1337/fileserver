@@ -3,35 +3,32 @@
 # Builds the file server application binary
 
 CC = gcc
-CFLAGS = -Wall -lssl -lcrypto -pthread #make linker flags?
-OBJ = fileServer.o logger.o files.o settings.o io.o security.o networking.o clientlist.o
+CFLAGS = -Wall -lssl -lcrypto -pthread
+OBJ = fileServer.o logger.o settings.o io.o security.o networking.o clientlist.o
 EXEC = fs
 
 $(EXEC): $(OBJ)
 	$(CC) $(OBJ) -o $(EXEC) $(CFLAGS)
 
-fileServer.o: fileServer.h settings.h logger.h io.h files.h security.h networking.h fileServer.c 
+fileServer.o: fileServer.h settings.h logger.h io.h security.h networking.h fileServer.c 
 	$(CC) $(CFLAGS) -c fileServer.c
 
 logger.o: logger.h logger.c
 	$(CC) $(CFLAGS) -c logger.c
 
-settings.o: settings.h files.h io.h fileServer.h settings.c
+settings.o: settings.h io.h fileServer.h logger.h settings.c
 	$(CC) $(CFLAGS) -c settings.c
 
-files.o: files.h fileServer.h files.c
-	$(CC) $(CFLAGS) -c files.c
-
-io.o: io.h logger.h files.h settings.h fileServer.h io.c
+io.o: io.h logger.h fileServer.h io.c
 	$(CC) $(CFLAGS) -c io.c
 
-security.o: security.h settings.h io.h logger.h networking.h fileServer.h security.c
+security.o: security.h io.h settings.h fileServer.h security.c
 	$(CC) $(CFLAGS) -c security.c
 
-networking.o: networking.h logger.h io.h security.h files.h clientlist.h networking.c
+networking.o: networking.h fileServer.h logger.h io.h security.h clientlist.h networking.c
 	$(CC) $(CFLAGS) -c networking.c
 
-clientlist.o: clientlist.h clientlist.c
+clientlist.o: clientlist.h fileServer.h clientlist.c
 	$(CC) $(CFLAGS) -c clientlist.c
 
 clean:

@@ -9,4 +9,4 @@ int checkPassword(char* password, char* currentPasswordHash);
 void genHash(char* password, unsigned long length, char* hashString);
 void setCredentials(config_t* Config);
 int validateName(char* username); 
-
+int splitCredentials(char* credString, char* serverUsername, char* serverPasswordHash);
