@@ -12,6 +12,7 @@ void showServerOptions();
 void serverMenu(config_t* Config, fileList_t* FileList, int connectionSocket);
 void editSettings(config_t* Config);
 void getKeyboardInput(char* inputString, int inputLength);
+int getPassword(char* passwordString, int inputLength);
 void getSocketInput(char* inputString, int inputLength, int sockFd);
 int listFiles(fileList_t* FileList, char* shareFolder); 
 int getFileList(fileList_t* FileList, int connectionSocket);

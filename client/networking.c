@@ -38,14 +38,21 @@ void serverConnect(config_t* Config, fileList_t* FileList) {
 			char buffer[256];
 			bzero(buffer, 256);
 			char* motd = buffer + 2;
+			int passwordReturn;
 
 			// Send over the username
 			write(connectionSocket, Config->username, strlen(Config->username));
 			read(connectionSocket, buffer, 255);
 
 			// Prompt the user for the password and send
-			printf("Enter server password: ");
-			getKeyboardInput(buffer, 31);
+			if ((passwordReturn = getPassword(buffer, 31)) == 1) {
+				// Could not set the terminal not echo, so just allow normal entry
+				printf("Enter server password: ");
+				getKeyboardInput(buffer, 31);
+			} else if (passwordReturn == 2) {
+				exit(EXIT_FAILURE);
+			}
+
 			write(connectionSocket, buffer, 31);
 
 			// read the reply from the server

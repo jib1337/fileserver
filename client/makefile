@@ -26,4 +26,4 @@ networking.o: fsClient.h networking.h files.h io.h networking.c
 	$(CC) $(CFLAGS) -c networking.c
 
 clean:
-	rm -vf $(OBJ) *.log fileshare/*
+	rm -vf $(OBJ)

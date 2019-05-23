@@ -60,7 +60,7 @@ void configReload() {
 			fclose(configFile);
 
 			logPipe("Updated server configuration from file", g_Config->logFd);
-			printf("\nUpdated server configuration from file");
+			printf("\nUpdated server configuration from file\n");
 
 		} else {
 			// The file had the wrong permissions or didn't open

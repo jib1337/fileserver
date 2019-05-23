@@ -27,7 +27,7 @@ void connectionSignalShutdown() {
 	/* Signal handler for SIGQUIT and SIGTERM when server is up
 	 * Sets a global flag to leave accept loop */
 
-	printf("\nShut down via signal\n");
+	printf("Shut down via signal\n");
 	g_exit = 1;
 }
 
@@ -44,7 +44,7 @@ void serverStart(config_t* Config) {
 
 	if ((listenSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_IP)) < 0) {
 
-			perror("Error - Could not create socket");
+			perror("Error - Could not create socket\n");
 
 	} else {
 			
@@ -54,7 +54,7 @@ void serverStart(config_t* Config) {
 
 		if (bind(listenSocket, (struct sockaddr*) &serverAddress, sizeof(struct sockaddr_in)) < 0) {
 				
-			perror("Error - Could not bind port");
+			perror("Error - Could not bind port\n");
 
 		} else {
 
@@ -84,7 +84,7 @@ void serverStart(config_t* Config) {
 				if (g_exit == 1) break; // Break out if global has been flipped
 					
 				if (clientSocket < 0) {
-					perror("Error - Could not accept new connection");
+					perror("Error - Could not accept new connection\n");
 					break;
 
 				} else {
@@ -103,13 +103,8 @@ void serverStart(config_t* Config) {
 					
 					insertClient(clientList, ServerInfo);
 
-					logPipe("Client connected", Config->logFd);
-					printf("Client connected\n");
-
 					if ((pthread_create(&ServerInfo->threadId, NULL, connectionHandler, (void*)ServerInfo)) != 0) {
-						perror("Error - Could not create thread");
-						exit(EXIT_FAILURE);
-
+						perror("\nError - Could not create thread");
 					}
 				}
 			}
@@ -134,12 +129,17 @@ void* connectionHandler(void* data) {
 	pthread_detach(pthread_self());
 	signal(SIGUSR1, threadExit);
 
-	if (clientLogin(ServerInfo) == 1) {
+	int disconnectMsg = 0;
+
+	if ((disconnectMsg = clientLogin(ServerInfo)) == 1) {
 		// Client authenticated successfully
 
 		char menuChoiceString[2];
 		int menuChoice = 0;
 		char accessMotdString[ACCMOTDLEN];
+
+		printf("Client connected\n");
+		logPipe("Client connected", ServerInfo->Config->logFd);
 
 		// Send access granted tag and motd
 		strcpy(accessMotdString, "g/");
@@ -173,14 +173,17 @@ void* connectionHandler(void* data) {
 		write(ServerInfo->clientSocket, "Access Denied.", 14);
 	}
 
-	// Before exit: remove self from list, close socket and free data
+	// Before exit: remove self from list, close socket
 	removeClient(ServerInfo->clientList, ServerInfo);
 	close(ServerInfo->clientSocket);
-	free(ServerInfo);
 
-	// Log disconnect message and display
-	logPipe("Client disconnected", ServerInfo->Config->logFd);
-	printf("Client disconnected\n");
+	if (disconnectMsg == 1) {
+		// Log disconnect message and display
+		logPipe("Client disconnected", ServerInfo->Config->logFd);
+		printf("Client disconnected\n");
+	}
+
+	free(ServerInfo);
 
 	pthread_exit((void*) 0);
 	

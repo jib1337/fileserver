@@ -34,7 +34,7 @@ typedef struct list list_t;
 
 struct list {
 	node_t* head;
-	node_t* foot;
+	//node_t* foot;
 	int count;
 };
 

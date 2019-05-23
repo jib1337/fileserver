@@ -7,6 +7,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <termios.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/sendfile.h>
@@ -155,6 +156,38 @@ void getKeyboardInput(char* inputString, int inputLength) {
 	}
 }
 
+int getPassword(char* passwordString, int inputLength) {
+	// Get and store a password from hidden shell input
+
+	char ch;
+	struct termios oflags, nflags;
+	tcgetattr(fileno(stdin), &oflags);
+	nflags = oflags;
+	nflags.c_lflag &= ~ECHO;
+	nflags.c_lflag |= ECHONL;
+
+	if (tcsetattr(fileno(stdin), TCSADRAIN, &nflags) != 0) {
+		perror("Error - Could not hide password input");
+		return 1;
+	}
+
+	printf("Enter server password: ");
+	fgets(passwordString, inputLength, stdin);
+
+	if (passwordString[strlen(passwordString)-1] == '\n') {
+		passwordString[strlen(passwordString)-1] = '\0';
+	} else {
+		while ((ch = getchar() != '\n') && (ch != EOF));
+	}
+
+	if (tcsetattr(fileno(stdin), TCSANOW, &oflags) != 0) {
+		perror("Error - Could not reset password echo");
+		return 2;
+	}
+
+	return 0;
+}
+
 int getFileList(fileList_t* FileList, int connectionSocket) {
 	// Outputs a list of current files in the shared directory.
 	
@@ -272,9 +305,9 @@ void uploadFileMenu(fileList_t* FileList, char* shareFolder, int connectionSocke
 			strcat(filePath, FileList->sharedFiles[fileNumber-1]);
 
 			if (uploadFile(FileList->sharedFiles[fileNumber-1], filePath, connectionSocket) == 0) {
-				printf("%s successfully uploaded.\n", FileList->sharedFiles[fileNumber-1]);
+				printf("File: %s successfully uploaded to server\n", FileList->sharedFiles[fileNumber-1]);
 			} else {
-				printf("%s failed to upload\n", FileList->sharedFiles[fileNumber-1]);
+				printf("File: %s failed to upload\n", FileList->sharedFiles[fileNumber-1]);
 			}
 
 			free(filePath);
@@ -317,8 +350,6 @@ int uploadFile(char* fileName, char* filePath, int connectionSocket) {
 
 				dataRemaining -= sentBytes;
 			}
-
-			printf("%s successfully uploaded to the server\n", fileName);
 
 		} else {
 

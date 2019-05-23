@@ -12,7 +12,6 @@
 #include <sys/socket.h>
 #include <sys/sendfile.h>
 
-
 #include "fileServer.h"
 #include "logger.h"
 #include "io.h"
@@ -118,11 +117,6 @@ int recieveFile(threadData_t* ServerInfo) {
 		size_t recievedBytes;
 		int remainingData = atoi(response);
 
-		// Set up file lock struct
-		struct flock fileLock;
-		memset(&fileLock, 0, sizeof(fileLock));
-		fileLock.l_type = F_WRLCK;
-
 		read(ServerInfo->clientSocket, fileName, 256);
 
 		char* filePath = calloc(1, strlen(ServerInfo->Config->shareFolder) + strlen(fileName) + 2);
@@ -134,8 +128,8 @@ int recieveFile(threadData_t* ServerInfo) {
 		if ((remainingData > 0) && ((ServerInfo->recFd = open(filePath, O_WRONLY | O_CREAT,
 							S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) > 0)) {
 			/* If the response was valid and the file was able to be opened without errors
-			 * Lock the file and let the client know we're ready to recieve */
-			//fcntl(ServerInfo->recFd, F_SETLKW, &fileLock);
+			 * let the client know we're ready to recieve */
+
 			write(ServerInfo->clientSocket, "ok", 3);
 
 		} else {
@@ -151,11 +145,9 @@ int recieveFile(threadData_t* ServerInfo) {
 			remainingData -= recievedBytes;
 		}
 		
-		// Close file and unlock
+		// Close file and reset descriptor
 		close(ServerInfo->recFd);
 		ServerInfo->recFd = -1;
-		//fileLock.l_type = F_UNLCK;
-		//fcntl(ServerInfo->recFd, F_SETLKW, &fileLock);
 		
 		// Log the download
 		char* logString = calloc(1, strlen(fileName) + 18);
@@ -177,9 +169,6 @@ int sendFile(threadData_t* ServerInfo) {
 	char fileName[255];
 	char fileSizeString[14];
 	char* filePath = calloc(1, strlen(ServerInfo->Config->shareFolder) + 257);
-	struct flock fileLock;
-	memset(&fileLock, 0, sizeof(fileLock));
-	fileLock.l_type = F_RDLCK;
 
 	// Get the filename from the client
 	read(ServerInfo->clientSocket, fileName, 255);
@@ -192,8 +181,6 @@ int sendFile(threadData_t* ServerInfo) {
 	if (((checkAccess(filePath)) >= 4) && ((ServerInfo->sendFd = open(filePath, O_RDONLY)) > 0)) {
 		// File exists with the correct permissions and opened with no errors
 		
-		//fcntl(ServerInfo->sendFd, F_SETLKW, &fileLock);
-		
 		struct stat fileStats;
 		fstat(ServerInfo->sendFd, &fileStats);
 		int sentBytes = 0;
@@ -201,6 +188,7 @@ int sendFile(threadData_t* ServerInfo) {
 		long dataRemaining = fileStats.st_size;
 
 		// Send the file size to the client - also lets them know the file is accessable and can be sent
+		memset(fileSizeString, 0, sizeof(fileSizeString));
 		sprintf(fileSizeString, "%ld", fileStats.st_size);
 		write(ServerInfo->clientSocket, fileSizeString, 14);
 
@@ -210,11 +198,9 @@ int sendFile(threadData_t* ServerInfo) {
 			dataRemaining -= sentBytes;
 		}
 
-		// Close and remove the lock
+		// Close and reset the descriptor
 		close(ServerInfo->sendFd);
 		ServerInfo->sendFd = -1;
-		//fileLock.l_type = F_UNLCK;
-		//fcntl(ServerInfo->sendFd, F_SETLKW, &fileLock);
 
 		// Log the operation
 		char* logString = calloc(1, strlen(fileName) + 28);
@@ -239,9 +225,6 @@ int sendFile(threadData_t* ServerInfo) {
 		return 1;
 	}
 
-	// Close and clean up
-	close(ServerInfo->sendFd);
-	ServerInfo->sendFd = -1;
 	free(filePath);
 
 	return 0;
@@ -277,7 +260,7 @@ void listFiles(threadData_t* serverInfo) {
 		fflush(stdout);
 
 	} else {
-		perror("Error - Directory unable to be scanned");
+		perror("Error - Directory unable to be scanned\n");
 	}
 }
 

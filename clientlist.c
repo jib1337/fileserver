@@ -14,33 +14,40 @@
 static pthread_mutex_t m_listRemoval = PTHREAD_MUTEX_INITIALIZER;
 
 list_t* newClientList() {
+	// Create a new client list starting node
+
 	list_t* list = malloc(sizeof(list_t));
 	list->head = NULL;
-	list->foot = NULL;
 	list->count = 0;
 	return list;
 }
 
 void insertClient(list_t* list, threadData_t* data) {
+	// Insert a new client at the end of the client list
 	
 	node_t* new = malloc(sizeof(node_t));
+	node_t* current;
 	
 	new->data = data;
 	new->next = NULL;
 
 	if (list->head == NULL) {
 		list->head = new;
-		list->foot = new;
+		
 	} else {
-		list->foot->next = new;
-		list->foot = new;
+		
+		current = list->head;
+		while (current->next != NULL) {
+			current = current->next;
+		}
+			current->next = new;
 	}
 
 	list->count++;
 }
 
 void removeClient(list_t* list, threadData_t* data) {
-// Remove client node from client list when closing a connection
+	// Remove client node from client list when closing a connection
 
 	node_t* current = list->head;
 	node_t* temp;
@@ -52,22 +59,23 @@ void removeClient(list_t* list, threadData_t* data) {
 
 		if (current->data->clientSocket == data->clientSocket) {
 		// The client to remove is at the head of the list
-		
+			
+			temp = list->head;	
 			list->head = current->next;
-			free(current);
+			free(temp);
 			list->count--;
 
 		} else {
 		// The client to remove is later in the list, so search through
 
-			while (current != NULL) {
+			while (current->next != NULL) {
 
 				if (current->next->data->clientSocket == data->clientSocket) {
 				// Next item after the current is the client we want to remove
 				
-					temp = current->next->next;
-					free(current->next);
-					current->next = temp;
+					temp = current->next;
+					current->next = temp->next;
+					free(temp);
 					list->count--;		
 					break;
 
@@ -91,8 +99,8 @@ void cleanupClients(list_t* list) {
 		// Signal thread to exit	
 		pthread_kill(list->head->data->threadId, SIGUSR1);
 		
-		// Here we check the file descriptors.
-		// Should be negative if not in use.
+		// Here we check the file descriptors
+		// Should be negative if not in use
 		if (list->head->data->recFd > 0) {
 			close(list->head->data->recFd);
 		}
