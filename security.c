@@ -116,11 +116,11 @@ void setCredentials(config_t* Config) {
 	char credString[128];
 
 	do {
-		printf("\nNew username: ");
+		printf("\nNew username (max 10 characters): ");
 		getKeyboardInput(username, 11);
 	} while (validateName(username) == 0);
 
-	printf("New password: ");
+	printf("New password (max 30 characters): ");
 	getKeyboardInput(password, 31);
 		
 	strcpy(credString, username);
@@ -131,6 +131,10 @@ void setCredentials(config_t* Config) {
 	configWrite(Config);
 
 	printf("Credentials updated.\n\n");
+
+	// zero out the password
+	bzero(password, 31);
+	bzero(passwordHash, 65);
 }
 
 int validateName(char* username) {
