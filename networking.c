@@ -178,9 +178,14 @@ void* connectionHandler(void* data) {
 	close(ServerInfo->clientSocket);
 
 	if (disconnectMsg == 1) {
-		// Log disconnect message and display
+		// Client choosing to disconnect
+
 		logPipe("Client disconnected", ServerInfo->Config->logFd);
 		printf("Client disconnected\n");
+	} else {
+		// Client failed authentication
+
+		logPipe("Client login attempt failed", ServerInfo->Config->logFd);
 	}
 
 	free(ServerInfo);
