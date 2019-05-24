@@ -6,7 +6,7 @@
 // Stores application settings
 typedef struct {
 	char username[11];
-	short serverPort;
+	unsigned short serverPort;
 	char serverIP[16];
 	char shareFolder[256];
 } config_t;

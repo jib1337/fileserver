@@ -37,6 +37,7 @@ int clientLogin(threadData_t* serverInfo) {
 
 	char username[11];
 	char password[31];
+	int result = 0;
 
 	bzero(username, 11);
 	bzero(password, 31);
@@ -46,7 +47,13 @@ int clientLogin(threadData_t* serverInfo) {
 	write(serverInfo->clientSocket, "Password: ", 11);
 	read(serverInfo->clientSocket, password, 31);
 
-	return(authenticate(serverInfo->Config->serverCreds, username, password));
+	result = authenticate(serverInfo->Config->serverCreds, username, password);
+
+	// Zero out these spaces in memory
+	bzero(username, 11);
+	bzero(password, 31);
+
+	return result;
 }
 
 int authenticate(char* credString, char* username, char* password) {

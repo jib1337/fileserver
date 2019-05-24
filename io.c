@@ -61,7 +61,7 @@ void sendFileMenu(threadData_t* ServerInfo) {
 	
 	char menuChoiceString[2];
 
-	// Send the fileList to the server
+	// Send the fileList to the client
 	listFiles(ServerInfo);
 
 	do {
@@ -85,15 +85,15 @@ void recieveFileMenu(threadData_t* ServerInfo) {
 
 	do {
 
-	read(ServerInfo->clientSocket, menuChoiceString, 2);
+		read(ServerInfo->clientSocket, menuChoiceString, 2);
 
-	if (strcmp(menuChoiceString, "u") == 0) {
-		if (recieveFile(ServerInfo) != 0) {
-			perror("Error - Attempt by client to upload file failed\n");
-			fflush(stdout);
-			logPipe("Client failed to upload file", ServerInfo->Config->logFd);
+		if (strcmp(menuChoiceString, "u") == 0) {
+			if (recieveFile(ServerInfo) != 0) {
+				perror("Error - Attempt by client to upload file failed\n");
+				fflush(stdout);
+				logPipe("Client failed to upload file", ServerInfo->Config->logFd);
+			}
 		}
-	}
 
 	} while (strcmp(menuChoiceString, "q") != 0);
 }
@@ -230,12 +230,12 @@ int sendFile(threadData_t* ServerInfo) {
 	return 0;
 }
 
-void listFiles(threadData_t* serverInfo) {
+void listFiles(threadData_t* ServerInfo) {
 	// Send a list of all shared files to a client socket
 
 	DIR *d;
 	struct dirent* dir;
-	d = opendir(serverInfo->Config->shareFolder);
+	d = opendir(ServerInfo->Config->shareFolder);
 	char buffer[1024];
 	
 	if (d) {
@@ -251,12 +251,12 @@ void listFiles(threadData_t* serverInfo) {
 			buffer[strlen(dir->d_name)] = '\n';
 			buffer[strlen(dir->d_name)+1] = '\0';
 
-			write(serverInfo->clientSocket, buffer, strlen(buffer));
+			write(ServerInfo->clientSocket, buffer, strlen(buffer));
 		}
 
 		closedir(d);
 
-		write(serverInfo->clientSocket, "/", 1);
+		write(ServerInfo->clientSocket, "/", 1);
 		fflush(stdout);
 
 	} else {

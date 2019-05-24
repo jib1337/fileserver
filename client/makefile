@@ -3,7 +3,7 @@
 # Builds the file server application binary
 
 CC = gcc
-CFLAGS = -Wall
+CFLAGS = -Wall -g
 OBJ = fsClient.o files.o settings.o io.o networking.o
 EXEC = cli
 

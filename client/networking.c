@@ -46,10 +46,13 @@ void serverConnect(config_t* Config, fileList_t* FileList) {
 
 			// Prompt the user for the password and send
 			if ((passwordReturn = getPassword(buffer, 31)) == 1) {
-				// Could not set the terminal not echo, so just allow normal entry
+				// Could disable the terminal echo, so just allow normal entry. Better than nothing I guess..
+
 				printf("Enter server password: ");
 				getKeyboardInput(buffer, 31);
 			} else if (passwordReturn == 2) {
+				// Couldn't restart the terminal echo for some reason? Better get out of here
+
 				exit(EXIT_FAILURE);
 			}
 
@@ -62,12 +65,12 @@ void serverConnect(config_t* Config, fileList_t* FileList) {
 					&& (buffer[1] == '/')) {
 				// Server sent MOTD with access granted tag, so authentication was successful
 
-			printf("\n----------------------------------------\n"
-			       "Message of the day:\n"
-			       "%s\n"
-			       "----------------------------------------\n", motd);
+				printf("\n----------------------------------------\n"
+				       "Message of the day:\n"
+			       	       "%s\n"
+			       	       "----------------------------------------\n", motd);
 
-			serverMenu(Config, FileList, connectionSocket);
+				serverMenu(Config, FileList, connectionSocket);
 
 			} else {
 				printf("\n%s\n", buffer);

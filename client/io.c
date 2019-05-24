@@ -40,6 +40,7 @@ void showServerOptions() {
 }
 
 void serverMenu(config_t* Config, fileList_t* FileList, int connectionSocket) {
+	// Allows the user to send requests to the server to perform different functions
 
 	char menuChoiceString[2];
 	int menuChoice = 0;
@@ -112,8 +113,9 @@ void editSettings(config_t* Config) {
 				getKeyboardInput(updatedSettingString, 6);
 				
 				// Just some basic validation on the port
-				if ((atoi(updatedSettingString) != 0) && (atoi(updatedSettingString) < 65536)) {
+				if ((atoi(updatedSettingString) != 0) && (atoi(updatedSettingString) < 65536)) {	
 					Config->serverPort = atoi(updatedSettingString);
+
 				} else {
 					printf("\nError: Invalid port number\n");
 				}
@@ -192,17 +194,19 @@ int getFileList(fileList_t* FileList, int connectionSocket) {
 	// Outputs a list of current files in the shared directory.
 	
 	int i = 0, j = 0, k;
-	int fileNum = 1;
 	char buffer[1024];
 	char c[1];
+	int arraySize = 50;
+	char** temp;
 
-	fileCleanup(FileList);	       
+	fileCleanup(FileList);
 
-	FileList->sharedFiles = malloc(sizeof(char*) * 20);
+	FileList->sharedFiles = malloc(sizeof(char*) * arraySize);
 
 	while ((read(connectionSocket, c, 1)) > 0) {
 
 		if (c[0] != '\n') {
+			// Read characters into the buffer until a newline
 
 			buffer[i] = c[0];
 			i++;
@@ -215,11 +219,27 @@ int getFileList(fileList_t* FileList, int connectionSocket) {
 
 			buffer[i] = '\0';
 
+			FileList->fileCount++;
+
+			if (FileList->fileCount > arraySize) {
+				// File array is full, so increase its size
+		
+				arraySize *= 2;
+				if ((temp = realloc(FileList->sharedFiles, sizeof(char*) * arraySize)) == NULL) {
+					// Realloc request failed, try and exit cleanly
+
+					perror("Error - Memory reallocation failed");
+					fileCleanup(FileList);
+					exit(EXIT_FAILURE);
+				} else {
+					// Allocation was successful
+					FileList->sharedFiles = temp;
+				}
+			}
+
 			FileList->sharedFiles[j] = (char*)calloc(1, strlen(buffer)+1);
 			strncpy(FileList->sharedFiles[j], buffer, strlen(buffer)+1);
-			FileList->fileCount++;
 			i=0;
-			fileNum++;
 			j++;
 		}
 	}
@@ -335,6 +355,7 @@ int uploadFile(char* fileName, char* filePath, int connectionSocket) {
 		long dataRemaining = fileStats.st_size;
 
 		// Send the file size to the client - also lets them know the file is accessable and can be sent
+		bzero(fileSizeString, sizeof(fileSizeString));
 		sprintf(fileSizeString, "%ld", fileStats.st_size);
 
 		// Write the filename and size to the socket
@@ -353,18 +374,17 @@ int uploadFile(char* fileName, char* filePath, int connectionSocket) {
 
 		} else {
 
+			close(localFile);
 			return 1;
 		}
-			
+
+		close(localFile);		
 
 	} else {
 		// If the file fails to open, we cannot proceed, so let the server know so they can handle on their end.
 		write(connectionSocket,  "error", 6);
 		return 1;	
 	}
-
-	// Close the file and free up the file path.
-	close(localFile);
 
 	return 0;
 }
@@ -403,10 +423,9 @@ void downloadFileMenu(fileList_t* FileList, char* shareFolder, int connectionSoc
 			
 			write(connectionSocket, "d", 2);
 
-			char* filePath = (char*)calloc(1, strlen(shareFolder) + strlen(FileList->sharedFiles[fileNumber-1] + 1));
-			strncpy(filePath, shareFolder, strlen(shareFolder));
-			strcat(filePath, "/");
-			strncat(filePath, FileList->sharedFiles[fileNumber-1], strlen(FileList->sharedFiles[fileNumber-1]));
+			char* filePath = (char*)calloc(1, strlen(shareFolder) + strlen(FileList->sharedFiles[fileNumber-1])+2);
+			sprintf(filePath, "%s/%s", shareFolder, FileList->sharedFiles[fileNumber-1]);
+
 			if (downloadFile(FileList->sharedFiles[fileNumber-1], filePath, connectionSocket) == 0) {
 				printf("%s successfully downloaded.\n", FileList->sharedFiles[fileNumber-1]);
 			} else {

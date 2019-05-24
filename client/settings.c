@@ -56,6 +56,11 @@ config_t configCheck() {
 			configRead(Config.shareFolder, 255, configFile);
 			fclose(configFile);
 
+			/* Attempt to create the share folder. If this fails, either we don't have access
+			 * or the folder already exists. In the case of the former, the user will recieve
+			 * an error message informing them the directory doesnt exist when trying to list files */
+			mkdir(Config.shareFolder, S_IRWXU | S_IRWXG | S_IRWXO);
+
 		} else {
 			// The file had the wrong permissions or didn't open
 			perror("Error - Settings file not readable");
@@ -64,7 +69,9 @@ config_t configCheck() {
 	} else {
 		// File doesn't exist
 		configWrite(&Config);
-
+		
+		// Attempt to create the default shared folder
+		mkdir(DEF_SHAREFOLDER, S_IRWXU | S_IRWXG | S_IRWXO);
 	}
 
 	return Config;
