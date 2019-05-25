@@ -180,7 +180,7 @@ int sendFile(threadData_t* ServerInfo) {
 
 	if (((checkAccess(filePath)) >= 4) && ((ServerInfo->sendFd = open(filePath, O_RDONLY)) > 0)) {
 		// File exists with the correct permissions and opened with no errors
-		
+	
 		struct stat fileStats;
 		fstat(ServerInfo->sendFd, &fileStats);
 		int sentBytes = 0;
@@ -237,14 +237,32 @@ void listFiles(threadData_t* ServerInfo) {
 	struct dirent* dir;
 	d = opendir(ServerInfo->Config->shareFolder);
 	char buffer[1024];
+	struct stat statBuffer;
+	char* filePath;
 	
 	if (d) {
 
 		while ((dir = readdir(d)) != NULL) {
 
-			// If the filename begins with a period, we don't want to display it. This means that self and parent
-			// are skipped, and also allows for hidden files to be placed in the directory that won't be shared.
+			/* If the filename begins with a period, we don't want to display it. This means that self and parent
+			 * are skipped, and also allows for hidden files to be placed in the directory that won't be shared.
+			 * We also want to skip folders as we are not sharing recursively */
+
 			if (dir->d_name[0] == '.') continue;
+
+			filePath = calloc(1, strlen(dir->d_name) + strlen(ServerInfo->Config->shareFolder)+2);
+			sprintf(filePath, "%s/%s", ServerInfo->Config->shareFolder, dir->d_name);
+			
+			if (stat(filePath, &statBuffer) != -1) {
+				// Only do this check if it's able to get stats for the file
+
+				if (S_ISDIR(statBuffer.st_mode)) {
+					// If the current item is a folder
+					free(filePath);
+					continue;
+				}
+			}
+			free(filePath);
 
 			strncpy(buffer, dir->d_name, strlen(dir->d_name));
 

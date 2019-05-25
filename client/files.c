@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <sys/stat.h>
 #include <string.h>
 
 #include "fsClient.h"
@@ -30,6 +31,26 @@ void fileCleanup(fileList_t* FileList) {
 	}
 }
 
+int isFolder(char* shareFolder, char* fileName) {
+	// Check if a file is a folder or not, so we can avoid listing them
+	
+	struct stat statBuffer;
+	char* filePath = calloc(1,strlen(shareFolder) + strlen(fileName)+2);
+
+	sprintf(filePath, "%s/%s", shareFolder, fileName);
+	
+	if ((stat(filePath, &statBuffer) != -1) && (S_ISDIR(statBuffer.st_mode))) {
+		// We were able to get stats for the file and determine it isn't a folder
+		//
+		free(filePath);
+		return 1;
+	} else {
+
+		free(filePath);
+		return 0;
+	}
+}
+
 void getFiles(fileList_t* FileList, char* shareFolder) {
 	/* Retrieves names of files from the shared folder and stores them in a filelist struct
 	 * If we already have information in the list, we'll free up that memory before retrieving again
@@ -45,6 +66,7 @@ void getFiles(fileList_t* FileList, char* shareFolder) {
 	if (d) {
 
 		while ((dir = readdir(d)) != NULL) {
+			if (isFolder(shareFolder, dir->d_name) == 1) continue;
 			if (dir->d_name[0] == '.') continue;
 			FileList->fileCount++;
 		}
@@ -57,6 +79,7 @@ void getFiles(fileList_t* FileList, char* shareFolder) {
 
 			// If the filename begins with a period, we don't want to display it. This means that self and parent
 			// are skipped, and also allows for hidden files to be placed in the directory that won't be shared.
+			if (isFolder(shareFolder, dir->d_name) == 1) continue;
 			if (dir->d_name[0] == '.') continue;
 
 			FileList->sharedFiles[i] = (char*)calloc(1, strlen(dir->d_name)+1);

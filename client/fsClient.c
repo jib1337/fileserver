@@ -22,7 +22,9 @@ int main() {
 	// Check/create config and log files
 	config_t Config = configCheck();
 
-	printWelcome();
+	printf("----------------------------------------\n"
+	       "  Welcome to Jack's fileserver client\n"
+	       "----------------------------------------\n");
 
 	while (menuChoice != 3) {
 

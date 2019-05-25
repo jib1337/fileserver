@@ -3,9 +3,9 @@
 # Builds the file server application binary
 
 CC = gcc
-CFLAGS = -Wall -g
+CFLAGS = -Wall
 OBJ = fsClient.o files.o settings.o io.o networking.o
-EXEC = cli
+EXEC = fsClient
 
 $(EXEC): $(OBJ)
 	$(CC) $(OBJ) -o $(EXEC) $(CFLAGS)

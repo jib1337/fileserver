@@ -100,12 +100,12 @@ void cleanupClients(list_t* list) {
 		pthread_kill(list->head->data->threadId, SIGUSR1);
 		
 		// Here we check the file descriptors
-		// Should be negative if not in use
-		if (list->head->data->recFd > 0) {
+		// Should be negative if not in use, so we'll close them if they aren't that.
+		if (list->head->data->recFd != -1) {
 			close(list->head->data->recFd);
 		}
 
-		if (list->head->data->sendFd > 0) {
+		if (list->head->data->sendFd != -1) {
 			close(list->head->data->sendFd);
 		}
 

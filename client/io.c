@@ -17,14 +17,6 @@
 #include "io.h"
 #include "settings.h"
 
-void printWelcome() {
-	// Prints the main menu along with the MOTD.
-
-	printf("----------------------------------------\n"
-	       "  Welcome to Jack's fileserver client\n"
-	       "----------------------------------------\n");
-}
-
 void showMainMenuOptions() {
 	// Prints the options for the main menu
 
@@ -78,7 +70,6 @@ void serverMenu(config_t* Config, fileList_t* FileList, int connectionSocket) {
 	}
 }
 
-
 void showSettings(config_t* Config) {
 	// Prints the current configuration settings
 
@@ -86,7 +77,6 @@ void showSettings(config_t* Config) {
 	printf("[1] Username:\t\t%s\n[2] Port:\t\t%d\n[3] Server IP:\t\t%s\n[4] Shared Folder:\t%s\n",
 			Config->username, Config->serverPort, Config->serverIP, Config->shareFolder);
 }
-
 
 void editSettings(config_t* Config) {
 	// Allows the user to edit the settings
@@ -196,7 +186,7 @@ int getFileList(fileList_t* FileList, int connectionSocket) {
 	int i = 0, j = 0, k;
 	char buffer[1024];
 	char c[1];
-	int arraySize = 50;
+	int arraySize = 20;
 	char** temp;
 
 	fileCleanup(FileList);
@@ -349,6 +339,7 @@ int uploadFile(char* fileName, char* filePath, int connectionSocket) {
 		struct stat fileStats;
 		fstat(localFile, &fileStats);
 		char serverClearance[3];
+		bzero(serverClearance, 3);
 	
 		int sentBytes = 0;
 		off_t offset = 0;

@@ -3,9 +3,9 @@
 # Builds the file server application binary
 
 CC = gcc
-CFLAGS = -Wall -lssl -lcrypto -pthread -g
+CFLAGS = -Wall -lssl -lcrypto -pthread
 OBJ = fileServer.o logger.o settings.o io.o security.o networking.o clientlist.o
-EXEC = fs
+EXEC = fileServer
 
 $(EXEC): $(OBJ)
 	$(CC) $(OBJ) -o $(EXEC) $(CFLAGS)
@@ -32,4 +32,4 @@ clientlist.o: clientlist.h fileServer.h clientlist.c
 	$(CC) $(CFLAGS) -c clientlist.c
 
 clean:
-	rm -vf $(OBJ) *.log
+	rm -vf $(OBJ) settings.conf

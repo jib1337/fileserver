@@ -6,7 +6,6 @@
 // Defining how many digits the file number can be. Ten should to be enough right?
 // If not, we can update this value later! =)
 
-void printWelcome();
 void showMainMenuOptions();
 void showServerOptions();
 void serverMenu(config_t* Config, fileList_t* FileList, int connectionSocket);
