@@ -41,7 +41,7 @@ int isFolder(char* shareFolder, char* fileName) {
 	
 	if ((stat(filePath, &statBuffer) != -1) && (S_ISDIR(statBuffer.st_mode))) {
 		// We were able to get stats for the file and determine it isn't a folder
-		//
+		
 		free(filePath);
 		return 1;
 	} else {

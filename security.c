@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <termios.h>
 
 #include "fileServer.h"
 #include "settings.h"
@@ -114,14 +115,29 @@ void setCredentials(config_t* Config) {
 	char password[31];
 	char passwordHash[65];
 	char credString[128];
+	struct termios oflags, nflags;
+	tcgetattr(fileno(stdin), &oflags);
+	nflags = oflags;
+	nflags.c_lflag &= ~ECHO;
+	nflags.c_lflag |= ECHONL;
 
 	do {
 		printf("\nNew username (max 10 characters): ");
 		getKeyboardInput(username, 11);
 	} while (validateName(username) == 0);
 
+	if (tcsetattr(fileno(stdin), TCSADRAIN, &nflags) != 0) {
+		// Password input unable to be hidden
+	
+		perror("Error - Could not hide password input");
+	}
+
 	printf("New password (max 30 characters): ");
 	getKeyboardInput(password, 31);
+
+	if (tcsetattr(fileno(stdin), TCSANOW, &oflags) != 0) {
+		perror("Error - could not reset password echo");
+	}
 		
 	strcpy(credString, username);
 	strcat(credString, ":");
