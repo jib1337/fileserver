@@ -123,7 +123,8 @@ void setCredentials(config_t* Config) {
 
 	do {
 		printf("\nNew username (max 10 characters): ");
-		getKeyboardInput(username, 11);
+		getKeyboardInput(username, 12);
+
 	} while (validateName(username) == 0);
 
 	if (tcsetattr(fileno(stdin), TCSADRAIN, &nflags) != 0) {
@@ -136,7 +137,7 @@ void setCredentials(config_t* Config) {
 	getKeyboardInput(password, 31);
 
 	if (tcsetattr(fileno(stdin), TCSANOW, &oflags) != 0) {
-		perror("Error - could not reset password echo");
+		perror("Error - Could not reset terminal echo");
 	}
 		
 	strcpy(credString, username);
@@ -146,26 +147,32 @@ void setCredentials(config_t* Config) {
 	strcpy(Config->serverCreds, credString);
 	configWrite(Config);
 
-	printf("Credentials updated.\n\n");
+	printf("\nCredentials updated.\n\nReminder:\nEnsure your client program settings file"
+			"\ncontains your chosen username\n\n");
 
-	// zero out the password
+	// zero out the password in memory
 	bzero(password, 31);
 	bzero(passwordHash, 65);
 }
 
 int validateName(char* username) {
-	// Validates a username to ensure only alphabetic characters are entered
+	// Validates a username to ensure only alphabetic characters are entered within the acceptable range
 
 	int i;
 
 	if (strlen(username) == 0) {
-		fprintf(stderr, "\nError - Username must be at least 1 character long.\n");
+		fprintf(stderr, "Error - Username must be at least 1 character long\n");
+		return 0;
+	}
+
+	if (strlen(username) > 10) {
+		fprintf(stderr, "Error - Username cannot be over 10 characters in length\n");
 		return 0;
 	}
 
 	for (i=0; i<strlen(username); i++) {
 		if (isalpha(username[i]) == 0) {
-			fprintf(stderr, "\nError - Username can only consist of alphabet characters.\nPlease try again.\n");
+			fprintf(stderr, "Error - Username can only consist of alphabet characters\n");
 			return 0;
 		}
 	}

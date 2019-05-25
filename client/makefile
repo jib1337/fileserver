@@ -1,6 +1,6 @@
 # File server application | Jack Nelson | CSP2308
 # makefile
-# Builds the file server application binary
+# Builds the file server client application binary
 
 CC = gcc
 CFLAGS = -Wall
