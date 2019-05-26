@@ -111,8 +111,8 @@ void setCredentials(config_t* Config) {
 	/* Provides interface for user to change the server credentials, and then updates
 	 * them in the config file */
 	
-	char username[11];
-	char password[31];
+	char username[12];
+	char password[32];
 	char passwordHash[65];
 	char credString[128];
 	struct termios oflags, nflags;
@@ -133,8 +133,16 @@ void setCredentials(config_t* Config) {
 		perror("Error - Could not hide password input");
 	}
 
-	printf("New password (max 30 characters): ");
-	getKeyboardInput(password, 31);
+	do {
+
+		printf("New password (max 30 characters): ");
+		getKeyboardInput(password, 32);
+
+		if (strlen(password) > 30) {
+			fprintf(stderr, "\nError - Username cannot be over 30 characters in length\n\n");
+		}
+
+	} while (strlen(password) > 30);
 
 	if (tcsetattr(fileno(stdin), TCSANOW, &oflags) != 0) {
 		perror("Error - Could not reset terminal echo");

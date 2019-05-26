@@ -75,7 +75,7 @@ void serverConnect(config_t* Config, fileList_t* FileList) {
 			} else {
 				printf("\n%s\n", buffer);
 				printf("Please verfiy your credentials are correct.\n");
-				exit(EXIT_SUCCESS);
+				exit(EXIT_FAILURE);
 			}
 
 		}

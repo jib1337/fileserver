@@ -5,7 +5,7 @@
 #define DEF_PORTNUM 6666
 #define DEF_IPADDRESS "127.0.0.1"
 #define DEF_SHAREFOLDER "./fileshare"
-#define DEF_MOTD "Welcome to the file server!"
+#define DEF_MOTD "Hi Rob! Hope you enjoy using my file server =)"
 #define DEF_LOGFILE "./activity.log"
 #define DEF_CREDS "user:5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8"
 

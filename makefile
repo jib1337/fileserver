@@ -32,4 +32,4 @@ clientlist.o: clientlist.h fileServer.h clientlist.c
 	$(CC) $(CFLAGS) -c clientlist.c
 
 clean:
-	rm -vf $(OBJ) settings.conf
+	rm -vf $(OBJ)

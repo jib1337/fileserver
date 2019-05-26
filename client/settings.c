@@ -80,7 +80,16 @@ config_t configCheck() {
 void configWrite(config_t* Config) {
 	// Write out the config file with current config settings in memory.
 	
-	FILE* configFile = fopen("settings.conf", "w");
-	fprintf(configFile, "%s\n%hi\n%s\n%s\n", Config->username, Config->serverPort, Config->serverIP, Config->shareFolder);
-	fclose(configFile);
+	int fileAccess;
+	FILE* configFile;
+
+	if ((((fileAccess = checkAccess("settings.conf")) == -1) || (fileAccess >= 2)) &&
+			((configFile = fopen("settings.conf", "w")) != NULL)) {
+		// Either the file doesn't exist or has the right permissions and was able to be opened with no errors
+
+		fprintf(configFile, "%s\n%hi\n%s\n%s\n", Config->username, Config->serverPort, Config->serverIP, Config->shareFolder);
+		fclose(configFile);
+	} else {
+		perror("Error - Settings file not writable");
+	}
 }
