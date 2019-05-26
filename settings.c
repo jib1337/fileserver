@@ -9,8 +9,6 @@
 #include <signal.h>
 #include <sys/wait.h>
 
-#include <unistd.h>
-
 #include "fileServer.h"
 #include "settings.h"
 #include "io.h"
