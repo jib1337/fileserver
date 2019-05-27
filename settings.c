@@ -26,7 +26,6 @@ void signalShutdown() {
 
 	// If the settings file is currently open, close it
 	if (g_configFile != NULL) {
-		printf("closing file!");
 		fclose(g_configFile);
 	}
 
