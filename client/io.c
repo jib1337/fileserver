@@ -219,6 +219,7 @@ int getFileList(fileList_t* FileList, int connectionSocket) {
 					// Realloc request failed, try and exit cleanly
 
 					perror("Error - Memory reallocation failed");
+					FileList->fileCount--;
 					fileCleanup(FileList);
 					exit(EXIT_FAILURE);
 				} else {
