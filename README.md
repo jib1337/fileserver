@@ -5,12 +5,12 @@ Warning: Data is unencrypted in transmission. Passwords are stored securely by t
 
 -------------------------------------------------------------------------------------------------------------------------------------------------
 
-# Server
+## Server
 1. Build by running the makefile.
 2. Run the program - choose a username and password.
 3. Review settings and configuration, then choose to run the server when satisfied.
 
-# Client
+## Client
 1. Build by running the makefile.
 2. Review configuration - remember to update the username in the config with the chosen server username.
 3. When satisfied, connect to the server and authenticate with the server's password.
