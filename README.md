@@ -5,6 +5,12 @@ Warning: Data is unencrypted in transmission. Passwords are stored securely by t
 
 -------------------------------------------------------------------------------------------------------------------------------------------------
 
+## Installing dependancies
+In order to compile the binaries, the OpenSSL libraries must be installed on the system. To do this, simply input the following command:
+```
+sudo apt-get install libssl-dev
+```
+
 ## Server
 1. Build by running the makefile.
 2. Run the program - choose a username and password.
