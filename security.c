@@ -164,7 +164,7 @@ void setCredentials(config_t* Config) {
 }
 
 int validateName(char* username) {
-	// Validates a username to ensure only alphabetic characters are entered within the acceptable range
+	// Validates a username
 
 	int i;
 
@@ -176,13 +176,6 @@ int validateName(char* username) {
 	if (strlen(username) > 10) {
 		fprintf(stderr, "Error - Username cannot be over 10 characters in length\n");
 		return 0;
-	}
-
-	for (i=0; i<strlen(username); i++) {
-		if (isalpha(username[i]) == 0) {
-			fprintf(stderr, "Error - Username can only consist of alphabet characters\n");
-			return 0;
-		}
 	}
 
 	return 1;
