@@ -164,9 +164,7 @@ void setCredentials(config_t* Config) {
 }
 
 int validateName(char* username) {
-	// Validates a username
-
-	int i;
+	// Validates a username by checking length
 
 	if (strlen(username) == 0) {
 		fprintf(stderr, "Error - Username must be at least 1 character long\n");
