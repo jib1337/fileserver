@@ -1,4 +1,4 @@
-# TCP File Server | Jack Nelson, 2019
+# TCP File Server
 
 File Server and Client applications, intended for use by a single user over multiple devices.
 Warning: Data is unencrypted in transmission. Passwords are stored securely by the server.
